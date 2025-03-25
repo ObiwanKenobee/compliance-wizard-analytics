@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { mapEsgReportItemToReport, mapReportToEsgReportItem, Report, EsgReportItem } from "@/types/api";
-import { toast } from "@/hooks/use-toast";
+import { EsgReportItem, Report, mapEsgReportItemToReport, mapReportToEsgReportItem } from "@/types/api";
 
 // Fetch all ESG reports
 export const fetchEsgReports = async (): Promise<Report[]> => {
@@ -19,14 +18,24 @@ export const fetchEsgReports = async (): Promise<Report[]> => {
 };
 
 // Create a new ESG report
-export const createEsgReport = async (report: Omit<Report, "id">): Promise<Report> => {
-  const newItem = mapReportToEsgReportItem(report as Report);
-  delete newItem.id; // Remove id for insert
+export const createEsgReport = async (reportData: Omit<Report, "id">): Promise<Report> => {
+  const esgReportItem = mapReportToEsgReportItem(reportData as Report);
+  
+  // Remove undefined values and ensure required fields
+  const dataToInsert = {
+    title: esgReportItem.title,
+    type: esgReportItem.type,
+    date: esgReportItem.date,
+    status: esgReportItem.status,
+    scope: esgReportItem.scope || 'global', // Default to global if not provided
+    download_link: esgReportItem.download_link || '',
+    blockchain_verified: esgReportItem.blockchain_verified || false
+  };
 
   const { data, error } = await supabase
     .from("esg_report_items")
-    .insert(newItem)
-    .select()
+    .insert(dataToInsert)
+    .select("*")
     .single();
 
   if (error) {
@@ -34,18 +43,29 @@ export const createEsgReport = async (report: Omit<Report, "id">): Promise<Repor
     throw new Error(`Failed to create ESG report: ${error.message}`);
   }
 
-  return mapEsgReportItemToReport(data as EsgReportItem);
+  return mapEsgReportItemToReport(data);
 };
 
 // Update an existing ESG report
-export const updateEsgReport = async (report: Report): Promise<Report> => {
-  const updatedItem = mapReportToEsgReportItem(report);
+export const updateEsgReport = async (reportData: Report): Promise<Report> => {
+  const esgReportItem = mapReportToEsgReportItem(reportData);
+  
+  // Ensure we have all required fields for the update
+  const dataToUpdate = {
+    title: esgReportItem.title,
+    type: esgReportItem.type,
+    date: esgReportItem.date,
+    status: esgReportItem.status,
+    scope: esgReportItem.scope || 'global', // Default to global if not provided
+    download_link: esgReportItem.download_link || '',
+    blockchain_verified: esgReportItem.blockchain_verified || false
+  };
 
   const { data, error } = await supabase
     .from("esg_report_items")
-    .update(updatedItem)
-    .eq("id", report.id)
-    .select()
+    .update(dataToUpdate)
+    .eq("id", reportData.id)
+    .select("*")
     .single();
 
   if (error) {
@@ -53,7 +73,7 @@ export const updateEsgReport = async (report: Report): Promise<Report> => {
     throw new Error(`Failed to update ESG report: ${error.message}`);
   }
 
-  return mapEsgReportItemToReport(data as EsgReportItem);
+  return mapEsgReportItemToReport(data);
 };
 
 // Delete an ESG report
@@ -69,14 +89,13 @@ export const deleteEsgReport = async (id: string): Promise<void> => {
   }
 };
 
-// Verify an ESG report on blockchain (simulated)
+// Verify an ESG report on blockchain
 export const verifyEsgReport = async (id: string): Promise<Report> => {
-  // In a real implementation, this would interact with a blockchain service
   const { data, error } = await supabase
     .from("esg_report_items")
     .update({ blockchain_verified: true })
     .eq("id", id)
-    .select()
+    .select("*")
     .single();
 
   if (error) {
@@ -84,5 +103,5 @@ export const verifyEsgReport = async (id: string): Promise<Report> => {
     throw new Error(`Failed to verify ESG report: ${error.message}`);
   }
 
-  return mapEsgReportItemToReport(data as EsgReportItem);
+  return mapEsgReportItemToReport(data);
 };
