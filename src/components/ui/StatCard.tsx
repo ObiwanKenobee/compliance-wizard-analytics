@@ -14,6 +14,7 @@ interface StatCardProps {
   };
   className?: string;
   animation?: boolean;
+  style?: React.CSSProperties;
 }
 
 const StatCard = ({ 
@@ -22,10 +23,11 @@ const StatCard = ({
   icon, 
   trend, 
   className,
-  animation = true
+  animation = true,
+  style
 }: StatCardProps) => {
   return (
-    <Card className={cn("overflow-hidden", className, animation && "animate-scale-in")}>
+    <Card className={cn("overflow-hidden", className, animation && "animate-scale-in")} style={style}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon && <div className="text-muted-foreground">{icon}</div>}
