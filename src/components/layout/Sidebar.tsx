@@ -15,7 +15,12 @@ import {
 import { cn } from "@/lib/utils";
 import Logo from "../ui/Logo";
 
-const Sidebar = () => {
+interface SidebarProps {
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+}
+
+const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   
@@ -28,24 +33,35 @@ const Sidebar = () => {
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
+  // If open prop is provided, use it; otherwise use internal state
+  const isOpen = open !== undefined ? open : !collapsed;
+  
+  const toggleSidebar = () => {
+    if (setOpen) {
+      setOpen(!isOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
+  };
+
   return (
     <aside 
       className={cn(
         "h-screen bg-sidebar transition-all duration-300 z-10 fixed lg:relative",
-        collapsed ? "w-[70px]" : "w-[250px]"
+        isOpen ? "w-[250px]" : "w-[70px]"
       )}
     >
       <div className="h-full flex flex-col">
         <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
-          <div className={cn("flex items-center", collapsed && "justify-center w-full")}>
-            <Logo className={cn(collapsed ? "w-8 h-8" : "w-8 h-8 mr-2")} />
-            {!collapsed && <span className="text-sidebar-foreground font-semibold">TrustChain</span>}
+          <div className={cn("flex items-center", !isOpen && "justify-center w-full")}>
+            <Logo className={cn(!isOpen ? "w-8 h-8" : "w-8 h-8 mr-2")} />
+            {isOpen && <span className="text-sidebar-foreground font-semibold">TrustChain</span>}
           </div>
           <button 
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleSidebar}
             className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-full hover:bg-sidebar-accent transition-colors"
           >
-            {collapsed ? <Menu size={18} /> : <ChevronLeft size={18} />}
+            {!isOpen ? <Menu size={18} /> : <ChevronLeft size={18} />}
           </button>
         </div>
 
@@ -58,11 +74,11 @@ const Sidebar = () => {
                   className={cn(
                     "sidebar-link",
                     location.pathname === item.path && "active",
-                    collapsed && "justify-center px-0"
+                    !isOpen && "justify-center px-0"
                   )}
                 >
                   <item.icon size={20} />
-                  {!collapsed && <span>{item.label}</span>}
+                  {isOpen && <span>{item.label}</span>}
                 </Link>
               </li>
             ))}
@@ -73,11 +89,11 @@ const Sidebar = () => {
           <button 
             className={cn(
               "sidebar-link",
-              collapsed && "justify-center px-0"
+              !isOpen && "justify-center px-0"
             )}
           >
             <LogOut size={20} />
-            {!collapsed && <span>Logout</span>}
+            {isOpen && <span>Logout</span>}
           </button>
         </div>
       </div>
