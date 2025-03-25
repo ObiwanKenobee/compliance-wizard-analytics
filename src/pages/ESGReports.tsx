@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Globe, Download, FileText, Filter, Calendar, Clock, CheckCircle2, 
@@ -546,6 +547,34 @@ const ESGReports = () => {
         </TabsContent>
       </Tabs>
 
-      <
+      <ReportDialog
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmit}
+        defaultValues={currentReport || undefined}
+        isLoading={isCreating || isUpdating}
+      />
 
+      <DeleteConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Report"
+        description="Are you sure you want to delete this report? This action cannot be undone."
+        isLoading={isDeleting}
+      />
 
+      <AlertDialog
+        isOpen={isVerifyDialogOpen}
+        onClose={() => setIsVerifyDialogOpen(false)}
+        onConfirm={handleConfirmVerify}
+        title="Verify on Blockchain"
+        description="Are you sure you want to verify this report on the blockchain? This will create an immutable record of the report's existence and contents."
+        confirmText="Verify"
+        isLoading={isVerifying}
+      />
+    </div>
+  );
+};
+
+export default ESGReports;
