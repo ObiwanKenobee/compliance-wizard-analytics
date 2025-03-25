@@ -10,9 +10,11 @@ import {
   Settings, 
   LogOut, 
   Menu, 
-  ChevronLeft 
+  ChevronLeft,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Logo from "../ui/Logo";
 
 interface SidebarProps {
@@ -44,60 +46,80 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     }
   };
 
-  return (
-    <aside 
-      className={cn(
-        "h-screen bg-sidebar transition-all duration-300 z-10 fixed lg:relative",
-        isOpen ? "w-[250px]" : "w-[70px]"
-      )}
-    >
-      <div className="h-full flex flex-col">
-        <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
-          <div className={cn("flex items-center", !isOpen && "justify-center w-full")}>
-            <Logo className={cn(!isOpen ? "w-8 h-8" : "w-8 h-8 mr-2")} />
-            {isOpen && <span className="text-sidebar-foreground font-semibold">TrustChain</span>}
-          </div>
-          <button 
-            onClick={toggleSidebar}
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-full hover:bg-sidebar-accent transition-colors"
-          >
-            {!isOpen ? <Menu size={18} /> : <ChevronLeft size={18} />}
-          </button>
+  const SidebarContent = () => (
+    <div className="h-full flex flex-col">
+      <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
+        <div className={cn("flex items-center", !isOpen && "justify-center w-full")}>
+          <Logo className={cn(!isOpen ? "w-8 h-8" : "w-8 h-8 mr-2")} />
+          {isOpen && <span className="text-sidebar-foreground font-semibold">TrustChain</span>}
         </div>
-
-        <nav className="flex-1 py-6 px-3 overflow-y-auto">
-          <ul className="space-y-2">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "sidebar-link",
-                    location.pathname === item.path && "active",
-                    !isOpen && "justify-center px-0"
-                  )}
-                >
-                  <item.icon size={20} />
-                  {isOpen && <span>{item.label}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="p-4 border-t border-sidebar-border mt-auto">
-          <button 
-            className={cn(
-              "sidebar-link",
-              !isOpen && "justify-center px-0"
-            )}
-          >
-            <LogOut size={20} />
-            {isOpen && <span>Logout</span>}
-          </button>
-        </div>
+        <button 
+          onClick={toggleSidebar}
+          className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-full hover:bg-sidebar-accent transition-colors lg:block hidden"
+        >
+          {!isOpen ? <Menu size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
-    </aside>
+
+      <nav className="flex-1 py-6 px-3 overflow-y-auto">
+        <ul className="space-y-2">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                className={cn(
+                  "sidebar-link",
+                  location.pathname === item.path && "active",
+                  !isOpen && "justify-center px-0"
+                )}
+              >
+                <item.icon size={20} />
+                {isOpen && <span>{item.label}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="p-4 border-t border-sidebar-border mt-auto">
+        <button 
+          className={cn(
+            "sidebar-link",
+            !isOpen && "justify-center px-0"
+          )}
+        >
+          <LogOut size={20} />
+          {isOpen && <span>Logout</span>}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Mobile responsive sidebar using Sheet component
+  return (
+    <>
+      {/* Mobile sidebar trigger - only visible on small screens */}
+      <Sheet>
+        <SheetTrigger asChild className="lg:hidden fixed z-50 bottom-4 right-4 bg-primary text-white p-3 rounded-full shadow-lg">
+          <button aria-label="Open menu">
+            <Menu size={24} />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 bg-sidebar w-[280px]">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop sidebar - hidden on small screens */}
+      <aside 
+        className={cn(
+          "h-screen bg-sidebar transition-all duration-300 z-10 fixed lg:relative hidden lg:block",
+          isOpen ? "w-[250px]" : "w-[70px]"
+        )}
+      >
+        <SidebarContent />
+      </aside>
+    </>
   );
 };
 

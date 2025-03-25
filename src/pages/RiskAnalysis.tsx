@@ -1,334 +1,482 @@
 
-import { 
-  Shield, AlertTriangle, AlertOctagon, ArrowRight, BarChart3, Download,
-  Gauge, ChevronRight, Clock, DollarSign, FileText 
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import RiskBadge from "@/components/ui/RiskBadge";
+import { useState } from "react";
+import { z } from "zod";
+import { CrudTable } from "@/components/common/CrudTable";
+import { CrudForm, FormField } from "@/components/common/CrudForm";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { Shield, AlertCircle, AlertTriangle, Gauge } from "lucide-react";
+
+// Risk factor type
+interface RiskFactor {
+  id: string;
+  name: string;
+  category: string;
+  severity: "low" | "medium" | "high" | "critical";
+  impact: number;
+  probability: number;
+  status: "active" | "monitored" | "mitigated" | "archived";
+  description: string;
+  createdAt: string;
+}
 
 const RiskAnalysis = () => {
-  const riskCategories = [
+  // State for risk factors
+  const [riskFactors, setRiskFactors] = useState<RiskFactor[]>([
     {
-      name: "Environmental",
-      score: 78,
-      level: "moderate",
-      alerts: 4,
-      trend: "+1.2%",
-      positive: false
+      id: "RISK-001",
+      name: "Supply Chain Disruption",
+      category: "Operational",
+      severity: "high",
+      impact: 8,
+      probability: 6,
+      status: "active",
+      description: "Potential disruption due to geopolitical tensions in Southeast Asia",
+      createdAt: "2023-06-15T00:00:00Z"
     },
     {
-      name: "Social",
-      score: 92,
-      level: "low",
-      alerts: 1,
-      trend: "+3.8%",
-      positive: true
+      id: "RISK-002",
+      name: "Regulatory Non-Compliance",
+      category: "Compliance",
+      severity: "medium",
+      impact: 7,
+      probability: 5,
+      status: "monitored",
+      description: "Changes to EU environmental regulations affecting product certifications",
+      createdAt: "2023-07-20T00:00:00Z"
     },
     {
-      name: "Governance",
-      score: 65,
-      level: "high",
-      alerts: 7,
-      trend: "-2.3%",
-      positive: false
+      id: "RISK-003",
+      name: "Labor Violations",
+      category: "Social",
+      severity: "critical",
+      impact: 9,
+      probability: 4,
+      status: "active",
+      description: "Potential labor violations in manufacturing facilities in South Asia",
+      createdAt: "2023-08-05T00:00:00Z"
     },
     {
-      name: "Financial",
-      score: 82,
-      level: "moderate",
-      alerts: 3,
-      trend: "+0.5%",
-      positive: true
+      id: "RISK-004",
+      name: "Supplier Bankruptcy",
+      category: "Financial",
+      severity: "high",
+      impact: 8,
+      probability: 3,
+      status: "monitored",
+      description: "Financial instability of key component supplier",
+      createdAt: "2023-09-12T00:00:00Z"
+    },
+    {
+      id: "RISK-005",
+      name: "Data Breach",
+      category: "Security",
+      severity: "high",
+      impact: 9,
+      probability: 5,
+      status: "mitigated",
+      description: "Potential exposure of supplier data through insecure systems",
+      createdAt: "2023-10-03T00:00:00Z"
+    },
+    {
+      id: "RISK-006",
+      name: "Carbon Emissions",
+      category: "Environmental",
+      severity: "medium",
+      impact: 6,
+      probability: 7,
+      status: "active",
+      description: "Increasing carbon footprint from logistics operations",
+      createdAt: "2023-11-18T00:00:00Z"
+    }
+  ]);
+
+  // State for CRUD operations
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentRiskFactor, setCurrentRiskFactor] = useState<RiskFactor | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form fields
+  const riskFormFields: FormField[] = [
+    {
+      name: "name",
+      label: "Risk Name",
+      type: "text",
+      placeholder: "Enter risk name",
+      validation: z.string().min(2, "Name must be at least 2 characters"),
+    },
+    {
+      name: "category",
+      label: "Category",
+      type: "select",
+      placeholder: "Select category",
+      options: [
+        { label: "Operational", value: "Operational" },
+        { label: "Compliance", value: "Compliance" },
+        { label: "Financial", value: "Financial" },
+        { label: "Environmental", value: "Environmental" },
+        { label: "Social", value: "Social" },
+        { label: "Security", value: "Security" },
+        { label: "Reputational", value: "Reputational" },
+      ],
+      validation: z.string().min(1, "Category is required"),
+    },
+    {
+      name: "severity",
+      label: "Severity",
+      type: "select",
+      placeholder: "Select severity",
+      options: [
+        { label: "Low", value: "low" },
+        { label: "Medium", value: "medium" },
+        { label: "High", value: "high" },
+        { label: "Critical", value: "critical" },
+      ],
+      validation: z.string().min(1, "Severity is required"),
+    },
+    {
+      name: "impact",
+      label: "Impact (1-10)",
+      type: "number",
+      placeholder: "Enter impact score",
+      validation: z.number().min(1).max(10),
+    },
+    {
+      name: "probability",
+      label: "Probability (1-10)",
+      type: "number",
+      placeholder: "Enter probability score",
+      validation: z.number().min(1).max(10),
+    },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      placeholder: "Select status",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Monitored", value: "monitored" },
+        { label: "Mitigated", value: "mitigated" },
+        { label: "Archived", value: "archived" },
+      ],
+      validation: z.string().min(1, "Status is required"),
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      placeholder: "Enter risk description",
+      validation: z.string().min(10, "Description must be at least 10 characters"),
     }
   ];
 
-  const regulationIssues = [
+  // Table columns
+  const columns = [
     {
-      id: 1,
-      title: "Carbon Emission Reporting",
-      description: "Three suppliers missing required carbon emission data",
-      risk: "high",
-      dueDate: "2023-10-15",
-      impact: "Regulatory non-compliance penalties"
+      header: "ID",
+      accessorKey: "id",
     },
     {
-      id: 2,
-      title: "Labor Practices Audit",
-      description: "Supplier in Southeast Asia requires verification of labor standards",
-      risk: "moderate",
-      dueDate: "2023-11-02",
-      impact: "Potential media exposure risk"
+      header: "Risk Factor",
+      accessorKey: "name",
     },
     {
-      id: 3,
-      title: "Anti-Corruption Policy",
-      description: "New supplier requires anti-corruption policy verification",
-      risk: "low",
-      dueDate: "2023-12-10",
-      impact: "Minor documentation gap"
+      header: "Category",
+      accessorKey: "category",
+      cell: (risk: RiskFactor) => (
+        <Badge variant="outline">{risk.category}</Badge>
+      ),
+    },
+    {
+      header: "Severity",
+      accessorKey: "severity",
+      cell: (risk: RiskFactor) => (
+        <Badge className={getSeverityClass(risk.severity)}>
+          {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      header: "Risk Score",
+      accessorKey: "score",
+      cell: (risk: RiskFactor) => {
+        const score = Math.round((risk.impact * risk.probability) / 2);
+        return (
+          <div className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">{score}</span>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (risk: RiskFactor) => (
+        <Badge variant={getStatusVariant(risk.status)}>
+          {risk.status.charAt(0).toUpperCase() + risk.status.slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      header: "Created",
+      accessorKey: "createdAt",
+      cell: (risk: RiskFactor) => {
+        const date = new Date(risk.createdAt);
+        return date.toLocaleDateString();
+      },
     },
   ];
 
+  // Helper functions
+  const getSeverityClass = (severity: string) => {
+    switch (severity) {
+      case "low":
+        return "bg-blue-500 text-white";
+      case "medium":
+        return "bg-amber-500 text-white";
+      case "high":
+        return "bg-orange-500 text-white";
+      case "critical":
+        return "bg-red-500 text-white";
+      default:
+        return "";
+    }
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "destructive";
+      case "monitored":
+        return "warning";
+      case "mitigated":
+        return "success";
+      case "archived":
+        return "secondary";
+      default:
+        return "default";
+    }
+  };
+
+  // CRUD operations
+  const handleAddRiskFactor = () => {
+    setCurrentRiskFactor(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditRiskFactor = (risk: RiskFactor) => {
+    setCurrentRiskFactor(risk);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteRiskFactor = (risk: RiskFactor) => {
+    setCurrentRiskFactor(risk);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSubmit = (values: any) => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      if (currentRiskFactor) {
+        // Edit existing risk factor
+        setRiskFactors((prev) =>
+          prev.map((risk) =>
+            risk.id === currentRiskFactor.id
+              ? {
+                  ...risk,
+                  ...values,
+                  impact: Number(values.impact),
+                  probability: Number(values.probability),
+                }
+              : risk
+          )
+        );
+        toast({
+          title: "Risk factor updated",
+          description: `${values.name} has been updated successfully.`,
+        });
+      } else {
+        // Add new risk factor
+        const newRiskFactor: RiskFactor = {
+          id: `RISK-${String(riskFactors.length + 1).padStart(3, "0")}`,
+          ...values,
+          impact: Number(values.impact),
+          probability: Number(values.probability),
+          createdAt: new Date().toISOString(),
+        };
+        setRiskFactors((prev) => [...prev, newRiskFactor]);
+        toast({
+          title: "Risk factor added",
+          description: `${values.name} has been added successfully.`,
+        });
+      }
+      
+      setIsLoading(false);
+      setIsFormOpen(false);
+      setCurrentRiskFactor(null);
+    }, 1000);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!currentRiskFactor) return;
+    
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setRiskFactors((prev) =>
+        prev.filter((risk) => risk.id !== currentRiskFactor.id)
+      );
+      
+      toast({
+        title: "Risk factor deleted",
+        description: `${currentRiskFactor.name} has been deleted successfully.`,
+        variant: "destructive",
+      });
+      
+      setIsLoading(false);
+      setIsDeleteDialogOpen(false);
+      setCurrentRiskFactor(null);
+    }, 1000);
+  };
+
+  const handleSearch = (query: string) => {
+    // Implement search functionality here
+    console.log("Searching for:", query);
+  };
+
+  // Calculate statistics
+  const activeRisks = riskFactors.filter(risk => risk.status === "active").length;
+  const highSeverityRisks = riskFactors.filter(risk => 
+    risk.severity === "high" || risk.severity === "critical"
+  ).length;
+  const averageRiskScore = Math.round(
+    riskFactors.reduce((acc, risk) => acc + (risk.impact * risk.probability) / 2, 0) / 
+    riskFactors.length
+  );
+
   return (
     <div className="container pb-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Risk Analysis</h1>
           <p className="text-muted-foreground mt-1">
-            AI-powered risk assessment and prediction for your supply chain
+            Monitor and manage supply chain risks
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2">
-            <Download size={16} />
-            Export Report
-          </Button>
-          <Button className="gap-2">
-            <Shield size={16} />
-            Run New Analysis
-          </Button>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {riskCategories.map((category, index) => (
-          <Card key={category.name} className="hover-scale">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg">{category.name}</CardTitle>
-                <RiskBadge level={category.level as "low" | "moderate" | "high"} className="py-0.5 px-2 text-xs" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-3xl font-bold">{category.score}</p>
-                  <p className="text-sm text-muted-foreground">Risk Score</p>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-medium ${category.positive ? "text-green-500" : "text-red-500"}`}>
-                    {category.trend}
-                  </p>
-                  <p className="text-sm text-muted-foreground">vs Last Month</p>
-                </div>
-              </div>
-              
-              <div className="mt-4 h-2 w-full bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full ${
-                    category.level === "low" ? "bg-green-500" : 
-                    category.level === "moderate" ? "bg-amber-500" : "bg-red-500"
-                  }`}
-                  style={{ width: `${category.score}%` }}
-                ></div>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <div className="w-full flex justify-between items-center text-sm">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <AlertTriangle size={14} />
-                  {category.alerts} {category.alerts === 1 ? 'Alert' : 'Alerts'}
-                </span>
-                <Button variant="ghost" size="sm" className="h-8 gap-1">
-                  Details <ChevronRight size={14} />
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
       </div>
 
-      <Tabs defaultValue="issues" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="issues">
-            <AlertOctagon className="mr-2 h-4 w-4" /> Compliance Issues
-          </TabsTrigger>
-          <TabsTrigger value="predictions">
-            <BarChart3 className="mr-2 h-4 w-4" /> AI Predictions
-          </TabsTrigger>
-          <TabsTrigger value="blockchain">
-            <Gauge className="mr-2 h-4 w-4" /> Blockchain Verification
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Total Risk Factors</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-end">
+              <div className="text-3xl font-bold">{riskFactors.length}</div>
+              <Shield className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Identified risk factors
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="issues">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Active Compliance Issues</CardTitle>
-                  <CardDescription>Issues requiring attention or mitigation</CardDescription>
-                </div>
-                <Button variant="outline" size="sm">Filter</Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {regulationIssues.map((issue) => (
-                  <div 
-                    key={issue.id} 
-                    className="p-4 border rounded-lg hover:bg-accent transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <RiskBadge 
-                          level={issue.risk as "low" | "moderate" | "high"} 
-                          className="py-0.5 px-2 text-xs"
-                        />
-                        <h3 className="font-medium">{issue.title}</h3>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock size={14} />
-                        <span>Due {new Date(issue.dueDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-3">{issue.description}</p>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign size={14} />
-                        <span>Impact: {issue.impact}</span>
-                      </div>
-                      <Button variant="ghost" size="sm" className="gap-1">
-                        Resolve <ArrowRight size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <p className="text-sm text-muted-foreground">Showing 3 of 12 issues</p>
-              <Button variant="outline" size="sm">View All Issues</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Active Risks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-end">
+              <div className="text-3xl font-bold text-red-500">{activeRisks}</div>
+              <AlertCircle className="h-6 w-6 text-red-500" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Currently active risks
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="predictions">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Risk Predictions</CardTitle>
-              <CardDescription>Machine learning predictions for future compliance risks</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Predicted 15% Increase in ESG Violations in Southeast Asia</h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        AI analysis indicates increased environmental compliance risks with suppliers in Malaysia and Vietnam 
-                        over the next quarter.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="secondary">View Affected Suppliers</Button>
-                        <Button size="sm">Mitigation Plan</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-full">
-                      <AlertOctagon className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Supplier XYZ's Trust Score Predicted to Drop by 20%</h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Based on recent audit patterns and regional compliance issues, AI predicts a significant 
-                        trust score reduction for this key supplier.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="secondary">Request Immediate Audit</Button>
-                        <Button size="sm">Review Alternative Suppliers</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">ESG Score Projected to Drop 12% Without Intervention</h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        AI projects a decline in overall ESG rating unless sustainable sourcing targets are met this quarter.
-                        Recommended actions provided in report.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="secondary">View Detailed Report</Button>
-                        <Button size="sm">Sustainability Action Plan</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">High Severity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-end">
+              <div className="text-3xl font-bold text-orange-500">{highSeverityRisks}</div>
+              <AlertTriangle className="h-6 w-6 text-orange-500" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              High and critical severity risks
+            </p>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="blockchain">
-          <Card>
-            <CardHeader>
-              <CardTitle>Blockchain Trust Verification</CardTitle>
-              <CardDescription>Hedera ledger verification of compliance records</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Immutable Audit Trail</h3>
-                    <Button variant="outline" size="sm">Verify on Hedera</Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2 mb-3">
-                    All compliance data is permanently recorded on Hedera's distributed ledger, 
-                    providing tamper-proof verification of supplier compliance history.
-                  </p>
-                  <div className="text-xs font-mono bg-muted p-2 rounded overflow-x-auto">
-                    0.0.1234567 • VERIFIED • Last update: 23 min ago • 128 records • 42 suppliers
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg text-center">
-                    <h3 className="font-medium mb-2">Documentation Verified</h3>
-                    <p className="text-3xl font-bold mb-1">98%</p>
-                    <p className="text-sm text-muted-foreground">
-                      of supplier documents verified on blockchain
-                    </p>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg text-center">
-                    <h3 className="font-medium mb-2">Smart Contracts</h3>
-                    <p className="text-3xl font-bold mb-1">47</p>
-                    <p className="text-sm text-muted-foreground">
-                      automated compliance smart contracts
-                    </p>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg text-center">
-                    <h3 className="font-medium mb-2">Trust Tokens</h3>
-                    <p className="text-3xl font-bold mb-1">12,450</p>
-                    <p className="text-sm text-muted-foreground">
-                      tokens earned by compliant suppliers
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Average Risk Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-end">
+              <div className="text-3xl font-bold">{averageRiskScore}</div>
+              <Gauge className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Average risk score (1-50)
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <CrudTable
+            title="Risk Factor Management"
+            data={riskFactors}
+            columns={columns}
+            onAdd={handleAddRiskFactor}
+            onEdit={handleEditRiskFactor}
+            onDelete={handleDeleteRiskFactor}
+            onSearch={handleSearch}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Form */}
+      <CrudForm
+        fields={riskFormFields}
+        title={currentRiskFactor ? "Edit Risk Factor" : "Add Risk Factor"}
+        description={
+          currentRiskFactor
+            ? "Update the risk factor information below."
+            : "Enter the new risk factor details below."
+        }
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmit}
+        defaultValues={currentRiskFactor || undefined}
+        isLoading={isLoading}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Risk Factor"
+        description={
+          currentRiskFactor
+            ? `Are you sure you want to delete "${currentRiskFactor.name}"? This action cannot be undone.`
+            : "Are you sure you want to delete this risk factor? This action cannot be undone."
+        }
+        isLoading={isLoading}
+      />
     </div>
   );
 };

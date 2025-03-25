@@ -1,321 +1,450 @@
 
 import { useState } from "react";
-import { 
-  Users, Search, PlusCircle, Filter, Download, ArrowUpDown, Check, 
-  CheckCircle2, AlertTriangle, Hexagon 
-} from "lucide-react";
+import { z } from "zod";
+import { CrudTable } from "@/components/common/CrudTable";
+import { CrudForm, FormField } from "@/components/common/CrudForm";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import RiskBadge from "@/components/ui/RiskBadge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
+import { Check, X } from "lucide-react";
 
-type Supplier = {
-  id: number;
+// Supplier type
+interface Supplier {
+  id: string;
   name: string;
   category: string;
-  riskLevel: "low" | "moderate" | "high";
-  complianceScore: number;
-  status: "verified" | "pending" | "issue";
   location: string;
-  contactPerson: string;
-  blockhainVerified: boolean;
-};
+  status: string;
+  riskScore: number;
+  verified: boolean;
+  contactEmail: string;
+  contactPhone: string;
+}
 
 const Suppliers = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  const suppliers: Supplier[] = [
+  // State for the suppliers
+  const [suppliers, setSuppliers] = useState<Supplier[]>([
     {
-      id: 1,
-      name: "EcoMaterials, Inc.",
+      id: "SUP-001",
+      name: "EcoGreen Materials",
       category: "Raw Materials",
-      riskLevel: "low",
-      complianceScore: 92,
-      status: "verified",
-      location: "United States",
-      contactPerson: "Sarah Johnson",
-      blockhainVerified: true
+      location: "Chicago, USA",
+      status: "active",
+      riskScore: 92,
+      verified: true,
+      contactEmail: "contact@ecogreen.com",
+      contactPhone: "+1 555-123-4567"
     },
     {
-      id: 2,
-      name: "Pacific Manufacturing",
+      id: "SUP-002",
+      name: "Alps Electronics",
       category: "Components",
-      riskLevel: "moderate",
-      complianceScore: 78,
-      status: "pending",
-      location: "Singapore",
-      contactPerson: "Michael Wong",
-      blockhainVerified: true
+      location: "Tokyo, Japan",
+      status: "active",
+      riskScore: 87,
+      verified: true,
+      contactEmail: "info@alpselectronics.jp",
+      contactPhone: "+81 3-1234-5678"
     },
     {
-      id: 3,
-      name: "GlobalTech Industries",
-      category: "Electronics",
-      riskLevel: "high",
-      complianceScore: 61,
-      status: "issue",
-      location: "Malaysia",
-      contactPerson: "David Chen",
-      blockhainVerified: false
+      id: "SUP-003",
+      name: "Southland Manufacturing",
+      category: "Assembly",
+      location: "Atlanta, USA",
+      status: "active",
+      riskScore: 76,
+      verified: true,
+      contactEmail: "operations@southland.com",
+      contactPhone: "+1 555-987-6543"
     },
     {
-      id: 4,
-      name: "Highland Logistics",
+      id: "SUP-004",
+      name: "Eastern Textiles Ltd.",
+      category: "Textiles",
+      location: "Dhaka, Bangladesh",
+      status: "review",
+      riskScore: 68,
+      verified: false,
+      contactEmail: "info@easterntextiles.com",
+      contactPhone: "+880 2-9876543"
+    },
+    {
+      id: "SUP-005",
+      name: "Global Freight Partners",
       category: "Logistics",
-      riskLevel: "low",
-      complianceScore: 95,
-      status: "verified",
-      location: "Canada",
-      contactPerson: "Emma Williams",
-      blockhainVerified: true
+      location: "Rotterdam, Netherlands",
+      status: "active",
+      riskScore: 62,
+      verified: false,
+      contactEmail: "support@gfp.com",
+      contactPhone: "+31 10-987-6543"
+    }
+  ]);
+
+  // State for CRUD operations
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form fields
+  const supplierFormFields: FormField[] = [
+    {
+      name: "name",
+      label: "Supplier Name",
+      type: "text",
+      placeholder: "Enter supplier name",
+      validation: z.string().min(2, "Name must be at least 2 characters"),
     },
     {
-      id: 5,
-      name: "Euro Quality Products",
-      category: "Components",
-      riskLevel: "moderate",
-      complianceScore: 75,
-      status: "pending",
-      location: "Germany",
-      contactPerson: "Hans Mueller",
-      blockhainVerified: true
+      name: "category",
+      label: "Category",
+      type: "select",
+      placeholder: "Select category",
+      options: [
+        { label: "Raw Materials", value: "Raw Materials" },
+        { label: "Components", value: "Components" },
+        { label: "Assembly", value: "Assembly" },
+        { label: "Textiles", value: "Textiles" },
+        { label: "Logistics", value: "Logistics" },
+        { label: "Services", value: "Services" },
+      ],
+      validation: z.string().min(1, "Category is required"),
     },
     {
-      id: 6,
-      name: "AsiaSource Partners",
-      category: "Raw Materials",
-      riskLevel: "high",
-      complianceScore: 58,
-      status: "issue",
-      location: "Vietnam",
-      contactPerson: "Li Nguyen",
-      blockhainVerified: false
+      name: "location",
+      label: "Location",
+      type: "text",
+      placeholder: "City, Country",
+      validation: z.string().min(2, "Location is required"),
+    },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      placeholder: "Select status",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+        { label: "Under Review", value: "review" },
+        { label: "Suspended", value: "suspended" },
+      ],
+      validation: z.string().min(1, "Status is required"),
+    },
+    {
+      name: "riskScore",
+      label: "Risk Score (0-100)",
+      type: "number",
+      placeholder: "Enter risk score",
+      validation: z.number().min(0).max(100),
+    },
+    {
+      name: "verified",
+      label: "Verified",
+      type: "select",
+      placeholder: "Select verification status",
+      options: [
+        { label: "Verified", value: "true" },
+        { label: "Not Verified", value: "false" },
+      ],
+      validation: z.string(),
+    },
+    {
+      name: "contactEmail",
+      label: "Contact Email",
+      type: "email",
+      placeholder: "Enter contact email",
+      validation: z.string().email("Invalid email address"),
+    },
+    {
+      name: "contactPhone",
+      label: "Contact Phone",
+      type: "text",
+      placeholder: "Enter contact phone",
+      validation: z.string().min(5, "Phone number is required"),
     },
   ];
 
-  const filteredSuppliers = suppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Table columns
+  const columns = [
+    {
+      header: "ID",
+      accessorKey: "id",
+    },
+    {
+      header: "Name",
+      accessorKey: "name",
+    },
+    {
+      header: "Category",
+      accessorKey: "category",
+    },
+    {
+      header: "Location",
+      accessorKey: "location",
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (supplier: Supplier) => (
+        <Badge variant={getStatusVariant(supplier.status)}>
+          {supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      header: "Risk Score",
+      accessorKey: "riskScore",
+      cell: (supplier: Supplier) => (
+        <div className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${getRiskColor(supplier.riskScore)}`}></span>
+          <span>{supplier.riskScore}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Verified",
+      accessorKey: "verified",
+      cell: (supplier: Supplier) => (
+        supplier.verified ? 
+          <Badge variant="outline" className="text-green-500 gap-1">
+            <Check className="h-3 w-3" /> Verified
+          </Badge> : 
+          <Badge variant="outline" className="text-amber-500 gap-1">
+            <X className="h-3 w-3" /> Not Verified
+          </Badge>
+      ),
+    },
+  ];
 
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case "verified":
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case "pending":
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case "issue":
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+  // Helper functions
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "success";
+      case "inactive":
+        return "secondary";
+      case "review":
+        return "warning";
+      case "suspended":
+        return "destructive";
       default:
-        return null;
+        return "default";
     }
+  };
+
+  const getRiskColor = (score: number) => {
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-amber-500";
+    if (score >= 40) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
+  // CRUD operations
+  const handleAddSupplier = () => {
+    setCurrentSupplier(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditSupplier = (supplier: Supplier) => {
+    setCurrentSupplier(supplier);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteSupplier = (supplier: Supplier) => {
+    setCurrentSupplier(supplier);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSubmit = (values: any) => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      if (currentSupplier) {
+        // Edit existing supplier
+        setSuppliers((prev) =>
+          prev.map((supplier) =>
+            supplier.id === currentSupplier.id
+              ? {
+                  ...supplier,
+                  ...values,
+                  verified: values.verified === "true",
+                  riskScore: Number(values.riskScore),
+                }
+              : supplier
+          )
+        );
+        toast({
+          title: "Supplier updated",
+          description: `${values.name} has been updated successfully.`,
+        });
+      } else {
+        // Add new supplier
+        const newSupplier: Supplier = {
+          id: `SUP-${String(suppliers.length + 1).padStart(3, "0")}`,
+          ...values,
+          verified: values.verified === "true",
+          riskScore: Number(values.riskScore),
+        };
+        setSuppliers((prev) => [...prev, newSupplier]);
+        toast({
+          title: "Supplier added",
+          description: `${values.name} has been added successfully.`,
+        });
+      }
+      
+      setIsLoading(false);
+      setIsFormOpen(false);
+      setCurrentSupplier(null);
+    }, 1000);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!currentSupplier) return;
+    
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setSuppliers((prev) =>
+        prev.filter((supplier) => supplier.id !== currentSupplier.id)
+      );
+      
+      toast({
+        title: "Supplier deleted",
+        description: `${currentSupplier.name} has been deleted successfully.`,
+        variant: "destructive",
+      });
+      
+      setIsLoading(false);
+      setIsDeleteDialogOpen(false);
+      setCurrentSupplier(null);
+    }, 1000);
+  };
+
+  const handleSearch = (query: string) => {
+    // Implement search functionality here
+    console.log("Searching for:", query);
   };
 
   return (
     <div className="container pb-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and monitor your supply chain partners
+            Manage your supply chain partners
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2">
-            <Download size={16} />
-            Export
-          </Button>
-          <Button className="gap-2">
-            <PlusCircle size={16} />
-            Add Supplier
-          </Button>
-        </div>
       </div>
-      
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle>Supplier Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="flex flex-col items-center p-4 border rounded-lg">
-              <p className="text-3xl font-bold mb-1">{suppliers.length}</p>
-              <p className="text-sm text-muted-foreground">Total Suppliers</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-4 border rounded-lg">
-              <p className="text-3xl font-bold mb-1 text-green-500">
-                {suppliers.filter(s => s.status === "verified").length}
-              </p>
-              <p className="text-sm text-muted-foreground">Verified Suppliers</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-4 border rounded-lg">
-              <p className="text-3xl font-bold mb-1 text-amber-500">
-                {suppliers.filter(s => s.riskLevel === "moderate").length}
-              </p>
-              <p className="text-sm text-muted-foreground">Moderate Risk</p>
-            </div>
-            
-            <div className="flex flex-col items-center p-4 border rounded-lg">
-              <p className="text-3xl font-bold mb-1 text-red-500">
-                {suppliers.filter(s => s.riskLevel === "high").length}
-              </p>
-              <p className="text-sm text-muted-foreground">High Risk</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <CardTitle>Supplier Directory</CardTitle>
-            
-            <div className="flex w-full md:w-auto flex-col sm:flex-row gap-3">
-              <div className="relative flex-grow">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search suppliers..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" className="gap-2">
-                <Filter size={16} />
-                Filter
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
-              <table className="w-full caption-bottom text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="h-10 px-4 text-left font-medium">
-                      <div className="flex items-center gap-1">
-                        <Checkbox id="selectAll" aria-label="Select all suppliers" />
-                        <label htmlFor="selectAll" className="text-xs sr-only">Select All</label>
-                      </div>
-                    </th>
-                    <th className="h-10 px-4 text-left font-medium">
-                      <div className="flex items-center gap-1">
-                        Supplier
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <ArrowUpDown className="h-3 w-3" />
-                              <span className="sr-only">Sort by name</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem>
-                              <Check className="mr-2 h-4 w-4" /> A-Z
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Z-A</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </th>
-                    <th className="h-10 px-4 text-left font-medium">Category</th>
-                    <th className="h-10 px-4 text-left font-medium">Risk Level</th>
-                    <th className="h-10 px-4 text-left font-medium">
-                      <div className="flex items-center gap-1">
-                        Compliance Score
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <ArrowUpDown className="h-3 w-3" />
-                              <span className="sr-only">Sort by score</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem>
-                              <Check className="mr-2 h-4 w-4" /> Highest First
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Lowest First</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </th>
-                    <th className="h-10 px-4 text-left font-medium">Status</th>
-                    <th className="h-10 px-4 text-left font-medium">Location</th>
-                    <th className="h-10 px-4 text-left font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSuppliers.map((supplier) => (
-                    <tr key={supplier.id} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="p-4">
-                        <Checkbox aria-label={`Select ${supplier.name}`} />
-                      </td>
-                      <td className="p-4 font-medium">
-                        <div className="flex items-center gap-2">
-                          {supplier.name}
-                          {supplier.blockhainVerified && (
-                            <Hexagon className="h-4 w-4 text-blue-500 fill-blue-500/10" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 text-muted-foreground">{supplier.category}</td>
-                      <td className="p-4">
-                        <RiskBadge level={supplier.riskLevel} className="py-0.5 px-2 text-xs" />
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-full max-w-[80px] h-2 bg-secondary rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                supplier.complianceScore >= 80 ? "bg-green-500" : 
-                                supplier.complianceScore >= 70 ? "bg-amber-500" : "bg-red-500"
-                              }`}
-                              style={{ width: `${supplier.complianceScore}%` }}
-                            ></div>
-                          </div>
-                          <span>{supplier.complianceScore}%</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(supplier.status)}
-                          <span className="capitalize">{supplier.status}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-muted-foreground">{supplier.location}</td>
-                      <td className="p-4">
-                        <Button variant="ghost" size="sm">View</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between mt-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Total Suppliers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{suppliers.length}</div>
             <p className="text-sm text-muted-foreground">
-              Showing {filteredSuppliers.length} of {suppliers.length} suppliers
+              Active suppliers in your network
             </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <Button variant="outline" size="sm">Next</Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Verified</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">
+              {suppliers.filter((s) => s.verified).length}
             </div>
-          </div>
+            <p className="text-sm text-muted-foreground">
+              Blockchain verified suppliers
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Under Review</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-500">
+              {suppliers.filter((s) => s.status === "review").length}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Suppliers currently under review
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Average Risk Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">
+              {Math.round(
+                suppliers.reduce((acc, s) => acc + s.riskScore, 0) / suppliers.length
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Average risk across all suppliers
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <CrudTable
+            title="Supplier Management"
+            data={suppliers}
+            columns={columns}
+            onAdd={handleAddSupplier}
+            onEdit={handleEditSupplier}
+            onDelete={handleDeleteSupplier}
+            onSearch={handleSearch}
+          />
         </CardContent>
       </Card>
+
+      {/* Add/Edit Form */}
+      <CrudForm
+        fields={supplierFormFields}
+        title={currentSupplier ? "Edit Supplier" : "Add Supplier"}
+        description={
+          currentSupplier
+            ? "Update the supplier information below."
+            : "Enter the new supplier details below."
+        }
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmit}
+        defaultValues={
+          currentSupplier
+            ? { ...currentSupplier, verified: String(currentSupplier.verified) }
+            : undefined
+        }
+        isLoading={isLoading}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Supplier"
+        description={
+          currentSupplier
+            ? `Are you sure you want to delete ${currentSupplier.name}? This action cannot be undone.`
+            : "Are you sure you want to delete this supplier? This action cannot be undone."
+        }
+        isLoading={isLoading}
+      />
     </div>
   );
 };
