@@ -507,6 +507,45 @@ export type Database = {
         }
         Relationships: []
       }
+      esg_report_items: {
+        Row: {
+          blockchain_verified: boolean
+          created_at: string
+          date: string
+          download_link: string | null
+          id: string
+          scope: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          blockchain_verified?: boolean
+          created_at?: string
+          date?: string
+          download_link?: string | null
+          id?: string
+          scope: string
+          status: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          blockchain_verified?: boolean
+          created_at?: string
+          date?: string
+          download_link?: string | null
+          id?: string
+          scope?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       esg_reports: {
         Row: {
           content: Json
@@ -1117,6 +1156,45 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_factors: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          impact: number
+          name: string
+          probability: number
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          impact: number
+          name: string
+          probability: number
+          severity: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact?: number
+          name?: string
+          probability?: number
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       risk_zones: {
         Row: {
           coordinates: Json
@@ -1359,6 +1437,48 @@ export type Database = {
           supplier_name?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          category: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          id: string
+          location: string
+          name: string
+          risk_score: number
+          status: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          category: string
+          contact_email: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          location: string
+          name: string
+          risk_score: number
+          status: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          category?: string
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          risk_score?: number
+          status?: string
+          updated_at?: string
+          verified?: boolean
         }
         Relationships: []
       }

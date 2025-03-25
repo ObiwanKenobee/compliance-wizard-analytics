@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Globe, Download, FileText, Filter, Calendar, Clock, CheckCircle2, 
@@ -9,85 +8,33 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/hooks/use-toast";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ReportDialog, Report } from "@/components/reports/ReportDialog";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { AlertDialog } from "@/components/common/AlertDialog";
+import { useEsgReports } from "@/hooks/useEsgReports";
+import { CrudTable } from "@/components/common/CrudTable";
 
 const ESGReports = () => {
-  const [reports, setReports] = useState<Report[]>([
-    {
-      id: "ESG-2023-Q3",
-      title: "Q3 2023 ESG Performance Report",
-      date: "2023-10-15",
-      type: "quarterly",
-      status: "published",
-      scope: "global",
-      downloadLink: "#",
-      blockhainVerified: true
-    },
-    {
-      id: "ESG-AUDIT-2023",
-      title: "Annual Sustainability Audit Report",
-      date: "2023-09-30",
-      type: "audit",
-      status: "published",
-      scope: "global",
-      downloadLink: "#",
-      blockhainVerified: true
-    },
-    {
-      id: "ESG-2023-Q2",
-      title: "Q2 2023 ESG Performance Report",
-      date: "2023-07-15",
-      type: "quarterly",
-      status: "published",
-      scope: "global",
-      downloadLink: "#", 
-      blockhainVerified: true
-    },
-    {
-      id: "APAC-DISCLOSURE-2023",
-      title: "APAC Region Environmental Disclosure",
-      date: "2023-08-22",
-      type: "disclosure",
-      status: "published",
-      scope: "regional",
-      downloadLink: "#",
-      blockhainVerified: true
-    },
-    {
-      id: "ESG-2023-Q4",
-      title: "Q4 2023 ESG Performance Report",
-      date: "2023-12-31",
-      type: "quarterly",
-      status: "draft",
-      scope: "global",
-      downloadLink: "#",
-      blockhainVerified: false
-    },
-    {
-      id: "CARBON-AUDIT-2023",
-      title: "Carbon Footprint Audit",
-      date: "2023-11-05",
-      type: "audit",
-      status: "pending",
-      scope: "global",
-      downloadLink: "#",
-      blockhainVerified: false
-    }
-  ]);
+  const {
+    reports,
+    isLoading,
+    createReport,
+    isCreating,
+    updateReport,
+    isUpdating,
+    deleteReport,
+    isDeleting,
+    verifyReport,
+    isVerifying,
+  } = useEsgReports();
 
-  // State for CRUD operations
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
   const [currentReport, setCurrentReport] = useState<Report | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Status and type mapping
   const statusColors = {
     published: "bg-green-500",
     draft: "bg-amber-500",
@@ -101,7 +48,6 @@ const ESGReports = () => {
     disclosure: "Disclosure Document"
   };
 
-  // Helper functions
   const getStatusBadge = (status: string) => {
     const colorClass = statusColors[status as keyof typeof statusColors] || "bg-gray-500";
     return (
@@ -117,7 +63,6 @@ const ESGReports = () => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // CRUD operations
   const handleAddReport = () => {
     setCurrentReport(null);
     setIsFormOpen(true);
@@ -139,109 +84,128 @@ const ESGReports = () => {
   };
 
   const handleSubmit = (values: any) => {
-    setIsLoading(true);
+    if (currentReport) {
+      updateReport({
+        ...currentReport,
+        ...values,
+        blockhainVerified: values.blockhainVerified === "true",
+      });
+    } else {
+      createReport({
+        title: values.title,
+        type: values.type as "quarterly" | "annual" | "audit" | "disclosure",
+        status: values.status as "published" | "draft" | "pending",
+        scope: values.scope as "global" | "regional",
+        date: new Date().toISOString().split('T')[0],
+        downloadLink: "#",
+        blockhainVerified: values.blockhainVerified === "true",
+      });
+    }
     
-    // Simulate API call
-    setTimeout(() => {
-      if (currentReport) {
-        // Edit existing report
-        setReports((prev) =>
-          prev.map((report) =>
-            report.id === currentReport.id
-              ? {
-                  ...report,
-                  ...values,
-                  blockhainVerified: values.blockhainVerified === "true",
-                  date: currentReport.date, // Preserve date
-                }
-              : report
-          )
-        );
-        toast({
-          title: "Report updated",
-          description: `${values.title} has been updated successfully.`,
-        });
-      } else {
-        // Add new report
-        const newReport: Report = {
-          id: `ESG-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
-          ...values,
-          date: new Date().toISOString().split('T')[0],
-          downloadLink: "#",
-          blockhainVerified: values.blockhainVerified === "true",
-        };
-        setReports((prev) => [...prev, newReport]);
-        toast({
-          title: "Report created",
-          description: `${values.title} has been created successfully.`,
-        });
-      }
-      
-      setIsLoading(false);
-      setIsFormOpen(false);
-      setCurrentReport(null);
-    }, 1000);
+    setIsFormOpen(false);
+    setCurrentReport(null);
   };
 
   const handleConfirmDelete = () => {
     if (!currentReport) return;
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setReports((prev) =>
-        prev.filter((report) => report.id !== currentReport.id)
-      );
-      
-      toast({
-        title: "Report deleted",
-        description: `${currentReport.title} has been deleted successfully.`,
-        variant: "destructive",
-      });
-      
-      setIsLoading(false);
-      setIsDeleteDialogOpen(false);
-      setCurrentReport(null);
-    }, 1000);
+    deleteReport(currentReport.id);
+    setIsDeleteDialogOpen(false);
+    setCurrentReport(null);
   };
 
   const handleConfirmVerify = () => {
     if (!currentReport) return;
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setReports((prev) =>
-        prev.map((report) =>
-          report.id === currentReport.id
-            ? { ...report, blockhainVerified: true }
-            : report
-        )
-      );
-      
-      toast({
-        title: "Report verified",
-        description: `${currentReport.title} has been blockchain verified successfully.`,
-      });
-      
-      setIsLoading(false);
-      setIsVerifyDialogOpen(false);
-      setCurrentReport(null);
-    }, 1500);
+    verifyReport(currentReport.id);
+    setIsVerifyDialogOpen(false);
+    setCurrentReport(null);
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  // Filter reports based on search query
   const filteredReports = reports.filter(report => 
     report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     report.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     typeLabels[report.type as keyof typeof typeLabels].toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const columns = [
+    {
+      header: "Report ID",
+      accessorKey: "id",
+      cell: (row: Report) => <span className="font-mono text-xs">{row.id}</span>,
+    },
+    {
+      header: "Report Title",
+      accessorKey: "title",
+      cell: (row: Report) => (
+        <div className="flex items-center gap-2 font-medium">
+          {row.blockhainVerified && (
+            <Badge variant="outline" className="gap-1 text-xs px-1.5 py-0 border-green-200 text-green-700 dark:border-green-800 dark:text-green-400">
+              <CheckCircle2 className="h-3 w-3" /> Verified
+            </Badge>
+          )}
+          {row.title}
+        </div>
+      ),
+    },
+    {
+      header: "Type",
+      accessorKey: "type",
+      cell: (row: Report) => (
+        <span className="text-muted-foreground">
+          {typeLabels[row.type as keyof typeof typeLabels]}
+        </span>
+      ),
+    },
+    {
+      header: "Date",
+      accessorKey: "date",
+      cell: (row: Report) => (
+        <span className="text-muted-foreground">{formatDate(row.date)}</span>
+      ),
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (row: Report) => getStatusBadge(row.status),
+    },
+    {
+      header: "Scope",
+      accessorKey: "scope",
+      cell: (row: Report) => (
+        <span className="capitalize text-muted-foreground">{row.scope}</span>
+      ),
+    },
+    {
+      header: "Actions",
+      accessorKey: "actions",
+      cell: (row: Report) => (
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            disabled={row.status !== "published"}
+            title="Download Report"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          {!row.blockhainVerified && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-green-500"
+              onClick={() => handleVerifyReport(row)}
+              title="Verify on Blockchain"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="container pb-8 animate-fade-in">
@@ -411,92 +375,15 @@ const ESGReports = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Report ID</TableHead>
-                      <TableHead>Report Title</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Scope</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredReports.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                          No reports found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredReports.map((report) => (
-                        <TableRow key={report.id}>
-                          <TableCell className="font-mono text-xs">{report.id}</TableCell>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              {report.blockhainVerified && (
-                                <Badge variant="outline" className="gap-1 text-xs px-1.5 py-0 border-green-200 text-green-700 dark:border-green-800 dark:text-green-400">
-                                  <CheckCircle2 className="h-3 w-3" /> Verified
-                                </Badge>
-                              )}
-                              {report.title}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {typeLabels[report.type as keyof typeof typeLabels]}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{formatDate(report.date)}</TableCell>
-                          <TableCell>{getStatusBadge(report.status)}</TableCell>
-                          <TableCell className="capitalize text-muted-foreground">{report.scope}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                disabled={report.status !== "published"}
-                                title="Download Report"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              {!report.blockhainVerified && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="text-green-500"
-                                  onClick={() => handleVerifyReport(report)}
-                                  title="Verify on Blockchain"
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleEditReport(report)}
-                                title="Edit Report"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-destructive"
-                                onClick={() => handleDeleteReport(report)}
-                                title="Delete Report"
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <CrudTable 
+                data={filteredReports}
+                columns={columns}
+                title=""
+                onAdd={handleAddReport}
+                onEdit={handleEditReport}
+                onDelete={handleDeleteReport}
+                isLoading={isLoading || isCreating || isUpdating || isDeleting || isVerifying}
+              />
             </CardContent>
             <CardFooter className="flex justify-between">
               <p className="text-sm text-muted-foreground">
@@ -659,46 +546,6 @@ const ESGReports = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Report Form */}
-      <ReportDialog
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmit}
-        defaultValues={currentReport || undefined}
-        isLoading={isLoading}
-      />
+      <
 
-      {/* Delete Confirmation */}
-      <DeleteConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Report"
-        description={
-          currentReport
-            ? `Are you sure you want to delete "${currentReport.title}"? This action cannot be undone.`
-            : "Are you sure you want to delete this report? This action cannot be undone."
-        }
-        isLoading={isLoading}
-      />
 
-      {/* Verify Confirmation */}
-      <AlertDialog
-        isOpen={isVerifyDialogOpen}
-        onClose={() => setIsVerifyDialogOpen(false)}
-        onConfirm={handleConfirmVerify}
-        title="Blockchain Verification"
-        description={
-          currentReport
-            ? `Are you sure you want to verify "${currentReport.title}" on the blockchain? This will create an immutable record.`
-            : "Are you sure you want to verify this report on the blockchain? This will create an immutable record."
-        }
-        icon={<CheckCircle2 className="h-5 w-5 text-green-500" />}
-        confirmText="Verify"
-        isLoading={isLoading}
-      />
-    </div>
-  );
-};
-
-export default ESGReports;
