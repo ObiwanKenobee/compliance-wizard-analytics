@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { CrudTable } from "@/components/common/CrudTable";
@@ -252,9 +251,9 @@ const RiskAnalysis = () => {
       case "active":
         return "destructive";
       case "monitored":
-        return "warning";
+        return "outline";
       case "mitigated":
-        return "success";
+        return "secondary";
       case "archived":
         return "secondary";
       default:

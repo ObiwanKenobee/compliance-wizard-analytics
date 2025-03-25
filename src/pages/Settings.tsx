@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { CrudTable } from "@/components/common/CrudTable";
@@ -22,7 +21,6 @@ import {
   Ban
 } from "lucide-react";
 
-// User type
 interface TeamMember {
   id: string;
   name: string;
@@ -33,7 +31,6 @@ interface TeamMember {
   lastActive?: string;
 }
 
-// Integration type
 interface Integration {
   id: string;
   name: string;
@@ -43,7 +40,6 @@ interface Integration {
   lastSync?: string;
 }
 
-// Notification type
 interface NotificationSetting {
   id: string;
   name: string;
@@ -53,7 +49,6 @@ interface NotificationSetting {
 }
 
 const Settings = () => {
-  // Team members state
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
     {
       id: "USR-001",
@@ -101,7 +96,6 @@ const Settings = () => {
     }
   ]);
 
-  // Integrations state
   const [integrations, setIntegrations] = useState<Integration[]>([
     {
       id: "INT-001",
@@ -136,7 +130,6 @@ const Settings = () => {
     }
   ]);
 
-  // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState<NotificationSetting[]>([
     {
       id: "NOTIF-001",
@@ -175,16 +168,13 @@ const Settings = () => {
     }
   ]);
 
-  // State for current tab
   const [activeTab, setActiveTab] = useState("teamMembers");
 
-  // State for CRUD operations
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Team Member form fields
   const teamMemberFields: FormField[] = [
     {
       name: "name",
@@ -227,7 +217,6 @@ const Settings = () => {
     }
   ];
 
-  // Integration form fields
   const integrationFields: FormField[] = [
     {
       name: "name",
@@ -271,7 +260,6 @@ const Settings = () => {
     }
   ];
 
-  // Notification form fields
   const notificationFields: FormField[] = [
     {
       name: "name",
@@ -312,7 +300,6 @@ const Settings = () => {
     }
   ];
 
-  // Team Member columns
   const teamMemberColumns = [
     {
       header: "Name",
@@ -365,7 +352,6 @@ const Settings = () => {
     },
   ];
 
-  // Integration columns
   const integrationColumns = [
     {
       header: "Name",
@@ -403,7 +389,6 @@ const Settings = () => {
     },
   ];
 
-  // Notification columns
   const notificationColumns = [
     {
       header: "Name",
@@ -429,22 +414,21 @@ const Settings = () => {
       header: "Status",
       accessorKey: "enabled",
       cell: (notification: NotificationSetting) => (
-        <Badge variant={notification.enabled ? "success" : "secondary"}>
+        <Badge variant={notification.enabled ? "secondary" : "secondary"}>
           {notification.enabled ? "Enabled" : "Disabled"}
         </Badge>
       ),
     },
   ];
 
-  // Helper functions
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "active":
-        return "success";
+        return "secondary";
       case "inactive":
         return "secondary";
       case "pending":
-        return "warning";
+        return "outline";
       default:
         return "default";
     }
@@ -453,17 +437,16 @@ const Settings = () => {
   const getIntegrationStatusVariant = (status: string) => {
     switch (status) {
       case "connected":
-        return "success";
+        return "secondary";
       case "disconnected":
         return "secondary";
       case "pending":
-        return "warning";
+        return "outline";
       default:
         return "default";
     }
   };
 
-  // CRUD operations based on active tab
   const handleAdd = () => {
     setCurrentItem(null);
     setIsFormOpen(true);
@@ -482,7 +465,6 @@ const Settings = () => {
   const handleSubmit = (values: any) => {
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       if (activeTab === "teamMembers") {
         handleTeamMemberSubmit(values);
@@ -500,7 +482,6 @@ const Settings = () => {
 
   const handleTeamMemberSubmit = (values: any) => {
     if (currentItem) {
-      // Edit existing team member
       setTeamMembers((prev) =>
         prev.map((member) =>
           member.id === currentItem.id
@@ -513,7 +494,6 @@ const Settings = () => {
         description: `${values.name} has been updated successfully.`,
       });
     } else {
-      // Add new team member
       const newMember: TeamMember = {
         id: `USR-${String(teamMembers.length + 1).padStart(3, "0")}`,
         ...values,
@@ -529,7 +509,6 @@ const Settings = () => {
 
   const handleIntegrationSubmit = (values: any) => {
     if (currentItem) {
-      // Edit existing integration
       setIntegrations((prev) =>
         prev.map((integration) =>
           integration.id === currentItem.id
@@ -542,7 +521,6 @@ const Settings = () => {
         description: `${values.name} has been updated successfully.`,
       });
     } else {
-      // Add new integration
       const newIntegration: Integration = {
         id: `INT-${String(integrations.length + 1).padStart(3, "0")}`,
         ...values,
@@ -557,7 +535,6 @@ const Settings = () => {
 
   const handleNotificationSubmit = (values: any) => {
     if (currentItem) {
-      // Edit existing notification
       setNotificationSettings((prev) =>
         prev.map((notification) =>
           notification.id === currentItem.id
@@ -570,7 +547,6 @@ const Settings = () => {
         description: `${values.name} has been updated successfully.`,
       });
     } else {
-      // Add new notification
       const newNotification: NotificationSetting = {
         id: `NOTIF-${String(notificationSettings.length + 1).padStart(3, "0")}`,
         ...values,
@@ -589,7 +565,6 @@ const Settings = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       if (activeTab === "teamMembers") {
         setTeamMembers((prev) =>
@@ -627,11 +602,9 @@ const Settings = () => {
   };
 
   const handleSearch = (query: string) => {
-    // Implement search functionality here
     console.log("Searching for:", query);
   };
 
-  // Get active tab data and columns
   const getActiveTabData = () => {
     switch (activeTab) {
       case "teamMembers":
@@ -899,7 +872,6 @@ const Settings = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add/Edit Form */}
       <CrudForm
         fields={getActiveTabFormFields()}
         title={getFormTitle()}
@@ -919,7 +891,6 @@ const Settings = () => {
         isLoading={isLoading}
       />
 
-      {/* Delete Confirmation */}
       <DeleteConfirmDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
@@ -937,3 +908,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

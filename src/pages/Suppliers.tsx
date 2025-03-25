@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { CrudTable } from "@/components/common/CrudTable";
@@ -222,11 +221,11 @@ const Suppliers = () => {
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "active":
-        return "success";
+        return "secondary";
       case "inactive":
         return "secondary";
       case "review":
-        return "warning";
+        return "outline";
       case "suspended":
         return "destructive";
       default:
