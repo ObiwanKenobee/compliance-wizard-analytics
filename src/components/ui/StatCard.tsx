@@ -33,7 +33,7 @@ const StatCard = ({
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold break-words">{value}</div>
         {trend && (
           <p className={cn(
             "mt-1 text-xs flex items-center",

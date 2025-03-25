@@ -1,4 +1,3 @@
-
 import { Shield, BarChart3, Globe, PieChart } from "lucide-react";
 import StatCard from "@/components/ui/StatCard";
 import ComplianceScore from "@/components/dashboard/ComplianceScore";
@@ -77,17 +76,17 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 md:space-y-6 pb-6 md:pb-10">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight animate-fade-in">Dashboard</h2>
-          <p className="text-muted-foreground animate-fade-in" style={{ animationDelay: "50ms" }}>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight animate-fade-in">Dashboard</h2>
+          <p className="text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "50ms" }}>
             Your supply chain at a glance
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Global Suppliers"
           value="122"
@@ -126,17 +125,17 @@ const Dashboard = () => {
         />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <ComplianceScore score={87} className="lg:col-span-2" />
         <RiskAlerts alerts={alerts} />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <SupplierMap className="lg:col-span-2" />
         <BlockchainVerification />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:gap-6">
         <TopSuppliers suppliers={suppliers} />
       </div>
     </div>

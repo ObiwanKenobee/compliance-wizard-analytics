@@ -1,26 +1,38 @@
 
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Menu, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   className?: string;
+  toggleSidebar?: () => void;
 }
 
-const Header = ({ className }: HeaderProps) => {
+const Header = ({ className, toggleSidebar }: HeaderProps) => {
+  const isMobile = useIsMobile();
+
   return (
-    <header className={cn("py-3 px-6 border-b bg-background/50 backdrop-blur-md sticky top-0 z-10", className)}>
+    <header className={cn("py-3 px-4 md:px-6 border-b bg-background/50 backdrop-blur-md sticky top-0 z-10", className)}>
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold tracking-tight animate-fade-in">Hedera TrustChain</h1>
-          <p className="text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "50ms" }}>
-            Supply Chain Compliance Dashboard
-          </p>
+        <div className="flex items-center gap-2">
+          {toggleSidebar && (
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          )}
+          <div>
+            <h1 className="text-lg md:text-xl font-semibold tracking-tight animate-fade-in">Hedera TrustChain</h1>
+            <p className="text-xs md:text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "50ms" }}>
+              Supply Chain Compliance Dashboard
+            </p>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <div className="relative max-w-sm hidden md:block">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -37,7 +49,7 @@ const Header = ({ className }: HeaderProps) => {
             </span>
           </Button>
           
-          <Avatar className="h-9 w-9 cursor-pointer border-2 border-primary/10 transition-all hover:border-primary/30">
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 cursor-pointer border-2 border-primary/10 transition-all hover:border-primary/30">
             <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" alt="User" />
             <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
           </Avatar>
