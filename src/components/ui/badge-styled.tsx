@@ -1,10 +1,15 @@
 
 import React from "react";
-import { Badge, BadgeProps } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface BadgeStyledProps extends BadgeProps {
-  variant?: "default" | "destructive" | "outline" | "secondary" | "success" | "warning";
+// Define our custom variant types
+export type BadgeStyledVariant = "default" | "destructive" | "outline" | "secondary" | "success" | "warning";
+
+// Create a new interface without extending BadgeProps
+interface BadgeStyledProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "variant"> {
+  variant?: BadgeStyledVariant;
+  className?: string;
 }
 
 export function BadgeStyled({
@@ -14,7 +19,7 @@ export function BadgeStyled({
 }: BadgeStyledProps) {
   // Map our custom variants to standard variants + custom classes
   let variantClass = "";
-  let baseVariant: BadgeProps["variant"] = "default";
+  let baseVariant: "default" | "destructive" | "outline" | "secondary" = "default";
   
   switch (variant) {
     case "success":
@@ -26,7 +31,10 @@ export function BadgeStyled({
       variantClass = "bg-amber-500 text-white hover:bg-amber-600";
       break;
     default:
-      baseVariant = variant as BadgeProps["variant"];
+      // Only pass through the variants that Badge accepts
+      if (variant === "default" || variant === "destructive" || variant === "outline" || variant === "secondary") {
+        baseVariant = variant;
+      }
   }
 
   return (
