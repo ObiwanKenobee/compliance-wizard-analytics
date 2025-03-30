@@ -1,3 +1,4 @@
+
 import {
   BarChart2,
   AlertCircle,
@@ -5,15 +6,11 @@ import {
   Settings,
   Users,
   Activity,
-  FlowChart,
   LayoutDashboard,
-  HelpCircle,
+  GitBranch,  // Replacing FlowChart with GitBranch
 } from "lucide-react";
-import { MainNav } from "@/components/layout/MainNav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { UserAccountNav } from "@/components/layout/UserAccountNav";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
   Accordion,
@@ -22,6 +19,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
+
+interface SidebarProps {
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+}
 
 interface SidebarNavItem {
   title: string;
@@ -34,7 +36,7 @@ interface SidebarNavGroup {
   items: SidebarNavItem[];
 }
 
-export function Sidebar() {
+export function Sidebar({ open, setOpen }: SidebarProps) {
   const navigation: SidebarNavGroup[] = [
     {
       title: "Overview",
@@ -67,7 +69,7 @@ export function Sidebar() {
         {
           title: "System Flow",
           href: "/system-flow",
-          icon: <FlowChart className="h-4 w-4" />,
+          icon: <GitBranch className="h-4 w-4" />,
         },
       ],
     },
@@ -84,9 +86,9 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="flex flex-col space-y-4 py-4">
+    <div className={`flex flex-col space-y-4 py-4 ${open === false ? "hidden" : ""} md:block`}>
       <div className="px-3 py-2">
-        <MainNav className="mx-auto" />
+        <h2 className="text-lg font-semibold tracking-tight">Guardian-IO</h2>
       </div>
       <ScrollArea className="flex-1 space-y-4">
         <div className="space-y-4">
@@ -96,6 +98,7 @@ export function Sidebar() {
               collapsible
               key={index}
               className="w-full"
+              defaultValue={group.title}
             >
               <AccordionItem value={group.title}>
                 <AccordionTrigger className="px-3 font-medium">{group.title}</AccordionTrigger>
@@ -118,7 +121,7 @@ export function Sidebar() {
       </ScrollArea>
       <div className="space-y-2 border-t border-muted px-3 py-2">
         <Separator />
-        <ThemeToggle />
+        <ModeToggle />
       </div>
     </div>
   );
