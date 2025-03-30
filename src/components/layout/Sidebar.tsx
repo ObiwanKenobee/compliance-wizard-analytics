@@ -1,126 +1,125 @@
-
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  BarChart3, 
-  Shield, 
-  Users, 
-  Globe, 
-  Bell, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  ChevronLeft,
-  X
+import {
+  BarChart2,
+  AlertCircle,
+  FileText,
+  Settings,
+  Users,
+  Activity,
+  FlowChart,
+  LayoutDashboard,
+  HelpCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import Logo from "../ui/Logo";
+import { MainNav } from "@/components/layout/MainNav";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { UserAccountNav } from "@/components/layout/UserAccountNav";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Link } from "react-router-dom";
 
-interface SidebarProps {
-  open?: boolean;
-  setOpen?: (open: boolean) => void;
+interface SidebarNavItem {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
 }
 
-const Sidebar = ({ open, setOpen }: SidebarProps) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
-  
-  const navItems = [
-    { icon: BarChart3, label: "Dashboard", path: "/" },
-    { icon: Shield, label: "Risk Analysis", path: "/risk-analysis" },
-    { icon: Users, label: "Suppliers", path: "/suppliers" },
-    { icon: Globe, label: "ESG Reports", path: "/esg-reports" },
-    { icon: Bell, label: "Alerts", path: "/alerts" },
-    { icon: Settings, label: "Settings", path: "/settings" },
+interface SidebarNavGroup {
+  title: string;
+  items: SidebarNavItem[];
+}
+
+export function Sidebar() {
+  const navigation: SidebarNavGroup[] = [
+    {
+      title: "Overview",
+      items: [
+        {
+          title: "Dashboard",
+          href: "/",
+          icon: <BarChart2 className="h-4 w-4" />,
+        },
+        {
+          title: "Risk Analysis",
+          href: "/risk-analysis",
+          icon: <Activity className="h-4 w-4" />,
+        },
+        {
+          title: "Suppliers",
+          href: "/suppliers",
+          icon: <Users className="h-4 w-4" />,
+        },
+        {
+          title: "ESG Reports",
+          href: "/esg-reports",
+          icon: <FileText className="h-4 w-4" />,
+        },
+        {
+          title: "Alerts",
+          href: "/alerts",
+          icon: <AlertCircle className="h-4 w-4" />,
+        },
+        {
+          title: "System Flow",
+          href: "/system-flow",
+          icon: <FlowChart className="h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        {
+          title: "Settings",
+          href: "/settings",
+          icon: <Settings className="h-4 w-4" />,
+        },
+      ],
+    },
   ];
 
-  // If open prop is provided, use it; otherwise use internal state
-  const isOpen = open !== undefined ? open : !collapsed;
-  
-  const toggleSidebar = () => {
-    if (setOpen) {
-      setOpen(!isOpen);
-    } else {
-      setCollapsed(!collapsed);
-    }
-  };
-
-  const SidebarContent = () => (
-    <div className="h-full flex flex-col">
-      <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
-        <div className={cn("flex items-center", !isOpen && "justify-center w-full")}>
-          <Logo className={cn(!isOpen ? "w-8 h-8" : "w-8 h-8 mr-2")} />
-          {isOpen && <span className="text-sidebar-foreground font-semibold">TrustChain</span>}
-        </div>
-        <button 
-          onClick={toggleSidebar}
-          className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-full hover:bg-sidebar-accent transition-colors lg:block hidden"
-        >
-          {!isOpen ? <Menu size={18} /> : <ChevronLeft size={18} />}
-        </button>
+  return (
+    <div className="flex flex-col space-y-4 py-4">
+      <div className="px-3 py-2">
+        <MainNav className="mx-auto" />
       </div>
-
-      <nav className="flex-1 py-6 px-3 overflow-y-auto">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                className={cn(
-                  "sidebar-link",
-                  location.pathname === item.path && "active",
-                  !isOpen && "justify-center px-0"
-                )}
-              >
-                <item.icon size={20} />
-                {isOpen && <span>{item.label}</span>}
-              </Link>
-            </li>
+      <ScrollArea className="flex-1 space-y-4">
+        <div className="space-y-4">
+          {navigation.map((group, index) => (
+            <Accordion
+              type="single"
+              collapsible
+              key={index}
+              className="w-full"
+            >
+              <AccordionItem value={group.title}>
+                <AccordionTrigger className="px-3 font-medium">{group.title}</AccordionTrigger>
+                <AccordionContent className="space-y-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className="flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-secondary hover:text-foreground"
+                    >
+                      {item.icon}
+                      <span>{item.title}</span>
+                    </Link>
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           ))}
-        </ul>
-      </nav>
-
-      <div className="p-4 border-t border-sidebar-border mt-auto">
-        <button 
-          className={cn(
-            "sidebar-link",
-            !isOpen && "justify-center px-0"
-          )}
-        >
-          <LogOut size={20} />
-          {isOpen && <span>Logout</span>}
-        </button>
+        </div>
+      </ScrollArea>
+      <div className="space-y-2 border-t border-muted px-3 py-2">
+        <Separator />
+        <ThemeToggle />
       </div>
     </div>
   );
-
-  // Mobile responsive sidebar using Sheet component
-  return (
-    <>
-      {/* Mobile sidebar trigger - only visible on small screens */}
-      <Sheet>
-        <SheetTrigger asChild className="lg:hidden fixed z-50 bottom-4 right-4 bg-primary text-white p-3 rounded-full shadow-lg">
-          <button aria-label="Open menu">
-            <Menu size={24} />
-          </button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 bg-sidebar w-[280px]">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-
-      {/* Desktop sidebar - hidden on small screens */}
-      <aside 
-        className={cn(
-          "h-screen bg-sidebar transition-all duration-300 z-10 fixed lg:relative hidden lg:block",
-          isOpen ? "w-[250px]" : "w-[70px]"
-        )}
-      >
-        <SidebarContent />
-      </aside>
-    </>
-  );
-};
-
-export default Sidebar;
+}

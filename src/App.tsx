@@ -12,6 +12,7 @@ import ESGReports from "./pages/ESGReports";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import SystemFlow from "./pages/SystemFlow";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => {
                 <Route path="/esg-reports" element={<ESGReports />} />
                 <Route path="/alerts" element={<Alerts />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/system-flow" element={<SystemFlow />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
