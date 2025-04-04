@@ -7,7 +7,7 @@ import {
   Users,
   Activity,
   LayoutDashboard,
-  GitBranch,  // Replacing FlowChart with GitBranch
+  GitBranch,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -19,6 +19,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   open?: boolean;
@@ -37,6 +38,8 @@ interface SidebarNavGroup {
 }
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
+  const isMobile = useIsMobile();
+  
   const navigation: SidebarNavGroup[] = [
     {
       title: "Overview",
@@ -85,10 +88,17 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     },
   ];
 
+  // Close sidebar when clicking on a link on mobile
+  const handleLinkClick = () => {
+    if (isMobile && setOpen) {
+      setOpen(false);
+    }
+  };
+
   return (
-    <div className={`flex flex-col space-y-4 py-4 ${open === false ? "hidden" : ""} md:block`}>
+    <div className={`flex flex-col h-full space-y-4 py-4 ${open === false ? "hidden" : ""} md:block bg-sidebar`}>
       <div className="px-3 py-2">
-        <h2 className="text-lg font-semibold tracking-tight">Guardian-IO</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-sidebar-foreground">Guardian-IO</h2>
       </div>
       <ScrollArea className="flex-1 space-y-4">
         <div className="space-y-4">
@@ -100,14 +110,15 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
               className="w-full"
               defaultValue={group.title}
             >
-              <AccordionItem value={group.title}>
-                <AccordionTrigger className="px-3 font-medium">{group.title}</AccordionTrigger>
+              <AccordionItem value={group.title} className="border-none">
+                <AccordionTrigger className="px-3 font-medium text-sidebar-foreground">{group.title}</AccordionTrigger>
                 <AccordionContent className="space-y-1">
                   {group.items.map((item) => (
                     <Link
                       key={item.href}
                       to={item.href}
-                      className="flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-secondary hover:text-foreground"
+                      onClick={handleLinkClick}
+                      className="sidebar-link"
                     >
                       {item.icon}
                       <span>{item.title}</span>
@@ -119,10 +130,10 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
           ))}
         </div>
       </ScrollArea>
-      <div className="space-y-2 border-t border-muted px-3 py-2">
-        <Separator />
+      <div className="space-y-2 border-t border-sidebar-border px-3 py-2">
+        <Separator className="bg-sidebar-border" />
         <ModeToggle />
       </div>
     </div>
   );
-}
+};

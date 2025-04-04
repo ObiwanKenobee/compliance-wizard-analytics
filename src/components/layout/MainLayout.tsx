@@ -29,17 +29,28 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <div className={`fixed inset-0 z-20 bg-black/80 transition-opacity duration-300 md:hidden ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
-           onClick={() => setSidebarOpen(false)}>
-      </div>
+      {/* Backdrop overlay for mobile */}
+      <div 
+        className={`fixed inset-0 z-20 bg-black/80 transition-opacity duration-300 md:hidden ${
+          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`} 
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
       
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Sidebar */}
+      <div 
+        className={`fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 md:relative md:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       </div>
       
+      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

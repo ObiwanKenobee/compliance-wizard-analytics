@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -117,16 +118,16 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
+      <div className="w-full max-w-md mx-auto">
         <div className="mb-6 flex justify-center">
-          <Logo className="h-12 w-auto" />
+          <Logo className="h-10 w-auto sm:h-12" />
         </div>
         
-        <Card>
+        <Card className="w-full shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-xl sm:text-2xl text-center">Welcome</CardTitle>
+            <CardDescription className="text-center text-sm sm:text-base">
               Sign in to access your dashboard
             </CardDescription>
           </CardHeader>
@@ -149,6 +150,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="w-full"
                     />
                   </div>
                   <div className="space-y-2">
@@ -161,13 +163,14 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="w-full"
                     />
                   </div>
                   
                   {authError && (
-                    <div className="flex items-center gap-2 rounded bg-destructive/15 p-3 text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <p className="text-sm">{authError}</p>
+                    <div className="flex items-center gap-2 rounded bg-destructive/15 p-3 text-destructive text-sm">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-sm break-words">{authError}</p>
                     </div>
                   )}
                 </CardContent>
@@ -201,6 +204,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="w-full"
                     />
                   </div>
                   <div className="space-y-2">
@@ -211,20 +215,21 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="w-full"
                     />
                   </div>
                   
                   {authError && (
-                    <div className="flex items-center gap-2 rounded bg-destructive/15 p-3 text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <p className="text-sm">{authError}</p>
+                    <div className="flex items-center gap-2 rounded bg-destructive/15 p-3 text-destructive text-sm">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-sm break-words">{authError}</p>
                     </div>
                   )}
                   
                   {authSuccess && (
-                    <div className="flex items-center gap-2 rounded bg-green-500/15 p-3 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <p className="text-sm">{authSuccess}</p>
+                    <div className="flex items-center gap-2 rounded bg-green-500/15 p-3 text-green-600 text-sm">
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-sm break-words">{authSuccess}</p>
                     </div>
                   )}
                 </CardContent>
