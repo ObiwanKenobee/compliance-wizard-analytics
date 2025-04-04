@@ -7,6 +7,8 @@ export interface SystemNode {
   type: string;
   description: string;
   status: string;
+  latitude?: number;
+  longitude?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -39,6 +41,8 @@ export const fetchSystemNodes = async (): Promise<SystemNode[]> => {
     type: node.facility_type,
     description: node.location_type || '',
     status: node.status,
+    latitude: node.latitude,
+    longitude: node.longitude,
     created_at: node.created_at,
     updated_at: node.updated_at
   })) || [];
@@ -68,11 +72,19 @@ export const fetchSystemConnections = async (): Promise<SystemConnection[]> => {
 
 // Create a new system node
 export const createSystemNode = async (node: Omit<SystemNode, "id" | "created_at" | "updated_at">): Promise<SystemNode> => {
+  // Default values for latitude and longitude if not provided
+  const defaultLatitude = 0;
+  const defaultLongitude = 0;
+  const defaultUserId = "00000000-0000-0000-0000-000000000000"; // Default user ID
+  
   const nodeData = {
     name: node.name,
     facility_type: node.type,
     location_type: node.description,
-    status: node.status
+    status: node.status,
+    latitude: node.latitude || defaultLatitude,
+    longitude: node.longitude || defaultLongitude,
+    user_id: defaultUserId
   };
 
   const { data, error } = await supabase
@@ -92,6 +104,8 @@ export const createSystemNode = async (node: Omit<SystemNode, "id" | "created_at
     type: data.facility_type,
     description: data.location_type || '',
     status: data.status,
+    latitude: data.latitude,
+    longitude: data.longitude,
     created_at: data.created_at,
     updated_at: data.updated_at
   };
@@ -99,11 +113,14 @@ export const createSystemNode = async (node: Omit<SystemNode, "id" | "created_at
 
 // Create a new system connection
 export const createSystemConnection = async (connection: Omit<SystemConnection, "id" | "created_at" | "updated_at">): Promise<SystemConnection> => {
+  const defaultUserId = "00000000-0000-0000-0000-000000000000"; // Default user ID
+  
   const connectionData = {
     origin_id: connection.source_id,
     destination_id: connection.target_id,
     route_type: connection.type,
-    transportation_mode: connection.description
+    transportation_mode: connection.description,
+    user_id: defaultUserId
   };
 
   const { data, error } = await supabase
@@ -135,6 +152,8 @@ export const updateSystemNode = async (id: string, node: Partial<SystemNode>): P
   if (node.type) nodeData.facility_type = node.type;
   if (node.description) nodeData.location_type = node.description;
   if (node.status) nodeData.status = node.status;
+  if (node.latitude) nodeData.latitude = node.latitude;
+  if (node.longitude) nodeData.longitude = node.longitude;
 
   const { data, error } = await supabase
     .from("supply_chain_nodes")
@@ -154,6 +173,8 @@ export const updateSystemNode = async (id: string, node: Partial<SystemNode>): P
     type: data.facility_type,
     description: data.location_type || '',
     status: data.status,
+    latitude: data.latitude,
+    longitude: data.longitude,
     created_at: data.created_at,
     updated_at: data.updated_at
   };
