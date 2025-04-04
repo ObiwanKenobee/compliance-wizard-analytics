@@ -15,8 +15,10 @@ import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { AlertDialog } from "@/components/common/AlertDialog";
 import { useEsgReports } from "@/hooks/useEsgReports";
 import { CrudTable } from "@/components/common/CrudTable";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ESGReports = () => {
+  const isMobile = useIsMobile();
   const {
     reports,
     isLoading,
@@ -221,16 +223,16 @@ const ESGReports = () => {
         <div className="flex items-center gap-3">
           <Button variant="outline" className="gap-2">
             <Calendar size={16} />
-            Schedule Report
+            {!isMobile && <span>Schedule Report</span>}
           </Button>
           <Button className="gap-2" onClick={handleAddReport}>
             <Plus size={16} />
-            Create Report
+            {!isMobile && <span>Create Report</span>}
           </Button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
@@ -300,28 +302,28 @@ const ESGReports = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Upcoming Deadlines</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 border rounded-lg">
-                <Clock className="h-5 w-5 text-amber-500 mt-0.5" />
+                <Clock className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Q4 Report Due</p>
                   <p className="text-sm text-muted-foreground">Dec 31, 2023</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 border rounded-lg">
-                <Clock className="h-5 w-5 text-blue-500 mt-0.5" />
+                <Clock className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Annual Disclosure</p>
                   <p className="text-sm text-muted-foreground">Jan 15, 2024</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 border rounded-lg">
-                <Clock className="h-5 w-5 text-blue-500 mt-0.5" />
+                <Clock className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">EU CSRD Deadline</p>
                   <p className="text-sm text-muted-foreground">Feb 28, 2024</p>
@@ -333,15 +335,15 @@ const ESGReports = () => {
       </div>
       
       <Tabs defaultValue="reports" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="reports">
-            <FileText className="mr-2 h-4 w-4" /> All Reports
+        <TabsList className="mb-6 flex flex-wrap w-full sm:w-auto">
+          <TabsTrigger value="reports" className="flex-1 sm:flex-none">
+            <FileText className="mr-2 h-4 w-4" /> {!isMobile && "All Reports"}
           </TabsTrigger>
-          <TabsTrigger value="insights">
-            <BarChart3 className="mr-2 h-4 w-4" /> ESG Insights
+          <TabsTrigger value="insights" className="flex-1 sm:flex-none">
+            <BarChart3 className="mr-2 h-4 w-4" /> {!isMobile && "ESG Insights"}
           </TabsTrigger>
-          <TabsTrigger value="standards">
-            <BookOpen className="mr-2 h-4 w-4" /> Reporting Standards
+          <TabsTrigger value="standards" className="flex-1 sm:flex-none">
+            <BookOpen className="mr-2 h-4 w-4" /> {!isMobile && "Reporting Standards"}
           </TabsTrigger>
         </TabsList>
         
@@ -366,16 +368,16 @@ const ESGReports = () => {
                   </div>
                   <Button variant="outline" className="gap-2">
                     <Filter size={16} />
-                    Filter
+                    {!isMobile && "Filter"}
                   </Button>
                   <Button className="gap-2" onClick={handleAddReport}>
                     <Plus size={16} />
-                    Add Report
+                    {!isMobile && "Add Report"}
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <CrudTable 
                 data={filteredReports}
                 columns={columns}
@@ -386,7 +388,7 @@ const ESGReports = () => {
                 isLoading={isLoading || isCreating || isUpdating || isDeleting || isVerifying}
               />
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex flex-col sm:flex-row justify-between gap-4">
               <p className="text-sm text-muted-foreground">
                 Showing {filteredReports.length} reports
               </p>
@@ -464,10 +466,10 @@ const ESGReports = () => {
               <CardTitle>ESG Reporting Standards</CardTitle>
               <CardDescription>Overview of standards and frameworks</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <div className="space-y-6">
                 <div className="p-4 border rounded-lg">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full">
                       <FileText className="h-5 w-5 text-blue-500" />
                     </div>
@@ -477,7 +479,7 @@ const ESGReports = () => {
                         The GRI Standards create a common language for organizations to report on their sustainability impacts.
                         They provide a globally recognized framework for sustainability reporting.
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="text-blue-500 border-blue-200 dark:border-blue-950">Supported</Badge>
                         <Badge variant="outline" className="text-green-500 border-green-200 dark:border-green-950">Compliant</Badge>
                       </div>
@@ -486,7 +488,7 @@ const ESGReports = () => {
                 </div>
                 
                 <div className="p-4 border rounded-lg">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full">
                       <FileText className="h-5 w-5 text-blue-500" />
                     </div>
@@ -496,7 +498,7 @@ const ESGReports = () => {
                         SASB Standards identify the subset of ESG issues most relevant to financial performance for 77 industries.
                         They help businesses and investors develop a common language about the financial impacts of sustainability.
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="text-blue-500 border-blue-200 dark:border-blue-950">Supported</Badge>
                         <Badge variant="outline" className="text-green-500 border-green-200 dark:border-green-950">Compliant</Badge>
                       </div>
@@ -505,7 +507,7 @@ const ESGReports = () => {
                 </div>
                 
                 <div className="p-4 border rounded-lg">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full">
                       <FileText className="h-5 w-5 text-blue-500" />
                     </div>
@@ -515,7 +517,7 @@ const ESGReports = () => {
                         The TCFD recommendations help companies provide better information to support informed capital allocation.
                         They focus on effective climate-related disclosures that promote more informed investment decisions.
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="text-blue-500 border-blue-200 dark:border-blue-950">Supported</Badge>
                         <Badge variant="outline" className="text-amber-500 border-amber-200 dark:border-amber-950">Partial</Badge>
                       </div>
@@ -524,7 +526,7 @@ const ESGReports = () => {
                 </div>
                 
                 <div className="p-4 border rounded-lg">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full">
                       <FileText className="h-5 w-5 text-blue-500" />
                     </div>
@@ -534,7 +536,7 @@ const ESGReports = () => {
                         The CSRD aims to bring sustainability reporting on par with financial reporting. 
                         It extends the scope and requirements for sustainability reporting for EU companies.
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="text-blue-500 border-blue-200 dark:border-blue-950">Supported</Badge>
                         <Badge variant="outline" className="text-amber-500 border-amber-200 dark:border-amber-950">In Progress</Badge>
                       </div>

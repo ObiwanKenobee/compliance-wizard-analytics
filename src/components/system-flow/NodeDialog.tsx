@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SystemNode } from "@/api/system-flow";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NodeDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function NodeDialog({
   description,
   isLoading = false,
 }: NodeDialogProps) {
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState<Partial<SystemNode>>(
     initialData || {
       name: "",
@@ -58,7 +60,7 @@ export function NodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={isMobile ? "w-[95vw] max-w-lg" : "max-w-lg"}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -103,7 +105,7 @@ export function NodeDialog({
                 onChange={(e) => handleChange("description", e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="latitude">Latitude</Label>
                 <Input

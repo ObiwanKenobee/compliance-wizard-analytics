@@ -121,11 +121,11 @@
   }
   
   .statistic-value {
-    @apply text-3xl font-semibold tracking-tight transition-all duration-300;
+    @apply text-2xl md:text-3xl font-semibold tracking-tight transition-all duration-300;
   }
   
   .statistic-label {
-    @apply text-sm text-muted-foreground;
+    @apply text-xs md:text-sm text-muted-foreground;
   }
   
   .risk-badge {
@@ -150,5 +150,36 @@
   
   .animated-border {
     @apply relative after:absolute after:inset-0 after:rounded-lg after:border after:border-white/20 after:transition-all hover:after:border-white/50;
+  }
+
+  /* Responsive table */
+  .responsive-table {
+    @apply w-full overflow-x-auto;
+  }
+
+  .responsive-table table {
+    @apply min-w-full;
+  }
+
+  /* Make cards more responsive */
+  .responsive-card {
+    @apply w-full sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mx-auto;
+  }
+
+  /* General responsive utility classes */
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  }
+  
+  .responsive-flex {
+    @apply flex flex-col sm:flex-row gap-4;
+  }
+
+  .responsive-text {
+    @apply text-sm md:text-base;
+  }
+
+  .responsive-heading {
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold;
   }
 }
