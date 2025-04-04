@@ -1,480 +1,362 @@
-import { useState } from "react";
-import { z } from "zod";
-import { CrudTable } from "@/components/common/CrudTable";
-import { CrudForm, FormField } from "@/components/common/CrudForm";
-import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
-import { Shield, AlertCircle, AlertTriangle, Gauge } from "lucide-react";
 
-// Risk factor type
-interface RiskFactor {
-  id: string;
-  name: string;
-  category: string;
-  severity: "low" | "medium" | "high" | "critical";
-  impact: number;
-  probability: number;
-  status: "active" | "monitored" | "mitigated" | "archived";
-  description: string;
-  createdAt: string;
-}
+import { useState } from "react";
+import { 
+  AlertCircle, 
+  BarChart2, 
+  Filter, 
+  Plus,
+  Trash, 
+  SlidersHorizontal, 
+  Edit,
+  MessageSquareWarning,
+  ArrowUp,
+  ArrowDown
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRiskFactors } from "@/hooks/useRiskFactors";
+import { RiskFactorDialog } from "@/components/risk-analysis/RiskFactorDialog";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import type { RiskFactor } from "@/types/api";
 
 const RiskAnalysis = () => {
-  // State for risk factors
-  const [riskFactors, setRiskFactors] = useState<RiskFactor[]>([
-    {
-      id: "RISK-001",
-      name: "Supply Chain Disruption",
-      category: "Operational",
-      severity: "high",
-      impact: 8,
-      probability: 6,
-      status: "active",
-      description: "Potential disruption due to geopolitical tensions in Southeast Asia",
-      createdAt: "2023-06-15T00:00:00Z"
-    },
-    {
-      id: "RISK-002",
-      name: "Regulatory Non-Compliance",
-      category: "Compliance",
-      severity: "medium",
-      impact: 7,
-      probability: 5,
-      status: "monitored",
-      description: "Changes to EU environmental regulations affecting product certifications",
-      createdAt: "2023-07-20T00:00:00Z"
-    },
-    {
-      id: "RISK-003",
-      name: "Labor Violations",
-      category: "Social",
-      severity: "critical",
-      impact: 9,
-      probability: 4,
-      status: "active",
-      description: "Potential labor violations in manufacturing facilities in South Asia",
-      createdAt: "2023-08-05T00:00:00Z"
-    },
-    {
-      id: "RISK-004",
-      name: "Supplier Bankruptcy",
-      category: "Financial",
-      severity: "high",
-      impact: 8,
-      probability: 3,
-      status: "monitored",
-      description: "Financial instability of key component supplier",
-      createdAt: "2023-09-12T00:00:00Z"
-    },
-    {
-      id: "RISK-005",
-      name: "Data Breach",
-      category: "Security",
-      severity: "high",
-      impact: 9,
-      probability: 5,
-      status: "mitigated",
-      description: "Potential exposure of supplier data through insecure systems",
-      createdAt: "2023-10-03T00:00:00Z"
-    },
-    {
-      id: "RISK-006",
-      name: "Carbon Emissions",
-      category: "Environmental",
-      severity: "medium",
-      impact: 6,
-      probability: 7,
-      status: "active",
-      description: "Increasing carbon footprint from logistics operations",
-      createdAt: "2023-11-18T00:00:00Z"
-    }
-  ]);
-
-  // State for CRUD operations
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { 
+    riskFactorsQuery, 
+    createRiskFactorMutation, 
+    updateRiskFactorMutation, 
+    deleteRiskFactorMutation 
+  } = useRiskFactors();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRiskFactor, setSelectedRiskFactor] = useState<RiskFactor | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentRiskFactor, setCurrentRiskFactor] = useState<RiskFactor | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Form fields
-  const riskFormFields: FormField[] = [
-    {
-      name: "name",
-      label: "Risk Name",
-      type: "text",
-      placeholder: "Enter risk name",
-      validation: z.string().min(2, "Name must be at least 2 characters"),
-    },
-    {
-      name: "category",
-      label: "Category",
-      type: "select",
-      placeholder: "Select category",
-      options: [
-        { label: "Operational", value: "Operational" },
-        { label: "Compliance", value: "Compliance" },
-        { label: "Financial", value: "Financial" },
-        { label: "Environmental", value: "Environmental" },
-        { label: "Social", value: "Social" },
-        { label: "Security", value: "Security" },
-        { label: "Reputational", value: "Reputational" },
-      ],
-      validation: z.string().min(1, "Category is required"),
-    },
-    {
-      name: "severity",
-      label: "Severity",
-      type: "select",
-      placeholder: "Select severity",
-      options: [
-        { label: "Low", value: "low" },
-        { label: "Medium", value: "medium" },
-        { label: "High", value: "high" },
-        { label: "Critical", value: "critical" },
-      ],
-      validation: z.string().min(1, "Severity is required"),
-    },
-    {
-      name: "impact",
-      label: "Impact (1-10)",
-      type: "number",
-      placeholder: "Enter impact score",
-      validation: z.number().min(1).max(10),
-    },
-    {
-      name: "probability",
-      label: "Probability (1-10)",
-      type: "number",
-      placeholder: "Enter probability score",
-      validation: z.number().min(1).max(10),
-    },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      placeholder: "Select status",
-      options: [
-        { label: "Active", value: "active" },
-        { label: "Monitored", value: "monitored" },
-        { label: "Mitigated", value: "mitigated" },
-        { label: "Archived", value: "archived" },
-      ],
-      validation: z.string().min(1, "Status is required"),
-    },
-    {
-      name: "description",
-      label: "Description",
-      type: "textarea",
-      placeholder: "Enter risk description",
-      validation: z.string().min(10, "Description must be at least 10 characters"),
-    }
-  ];
-
-  // Table columns
-  const columns = [
-    {
-      header: "ID",
-      accessorKey: "id",
-    },
-    {
-      header: "Risk Factor",
-      accessorKey: "name",
-    },
-    {
-      header: "Category",
-      accessorKey: "category",
-      cell: (risk: RiskFactor) => (
-        <Badge variant="outline">{risk.category}</Badge>
-      ),
-    },
-    {
-      header: "Severity",
-      accessorKey: "severity",
-      cell: (risk: RiskFactor) => (
-        <Badge className={getSeverityClass(risk.severity)}>
-          {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "Risk Score",
-      accessorKey: "score",
-      cell: (risk: RiskFactor) => {
-        const score = Math.round((risk.impact * risk.probability) / 2);
-        return (
-          <div className="flex items-center gap-2">
-            <Gauge className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{score}</span>
-          </div>
-        );
-      },
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: (risk: RiskFactor) => (
-        <Badge variant={getStatusVariant(risk.status)}>
-          {risk.status.charAt(0).toUpperCase() + risk.status.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "Created",
-      accessorKey: "createdAt",
-      cell: (risk: RiskFactor) => {
-        const date = new Date(risk.createdAt);
-        return date.toLocaleDateString();
-      },
-    },
-  ];
-
-  // Helper functions
-  const getSeverityClass = (severity: string) => {
-    switch (severity) {
-      case "low":
-        return "bg-blue-500 text-white";
-      case "medium":
-        return "bg-amber-500 text-white";
-      case "high":
-        return "bg-orange-500 text-white";
-      case "critical":
-        return "bg-red-500 text-white";
-      default:
-        return "";
+  
+  const { data: riskFactors = [], isLoading, isError } = riskFactorsQuery;
+  
+  const filteredRiskFactors = riskFactors.filter((factor) => 
+    factor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    factor.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    factor.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const handleCreateRiskFactor = (data: any) => {
+    createRiskFactorMutation.mutate(data);
+  };
+  
+  const handleUpdateRiskFactor = (data: any) => {
+    if (selectedRiskFactor) {
+      updateRiskFactorMutation.mutate({
+        id: selectedRiskFactor.id,
+        riskFactor: data
+      });
     }
   };
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "destructive";
-      case "monitored":
-        return "outline";
-      case "mitigated":
-        return "secondary";
-      case "archived":
-        return "secondary";
-      default:
-        return "default";
+  
+  const handleDeleteRiskFactor = () => {
+    if (selectedRiskFactor) {
+      deleteRiskFactorMutation.mutate(selectedRiskFactor.id);
+      setIsDeleteDialogOpen(false);
     }
   };
-
-  // CRUD operations
-  const handleAddRiskFactor = () => {
-    setCurrentRiskFactor(null);
-    setIsFormOpen(true);
+  
+  const openEditDialog = (riskFactor: RiskFactor) => {
+    setSelectedRiskFactor(riskFactor);
+    setIsEditDialogOpen(true);
   };
-
-  const handleEditRiskFactor = (risk: RiskFactor) => {
-    setCurrentRiskFactor(risk);
-    setIsFormOpen(true);
-  };
-
-  const handleDeleteRiskFactor = (risk: RiskFactor) => {
-    setCurrentRiskFactor(risk);
+  
+  const openDeleteDialog = (riskFactor: RiskFactor) => {
+    setSelectedRiskFactor(riskFactor);
     setIsDeleteDialogOpen(true);
   };
-
-  const handleSubmit = (values: any) => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (currentRiskFactor) {
-        // Edit existing risk factor
-        setRiskFactors((prev) =>
-          prev.map((risk) =>
-            risk.id === currentRiskFactor.id
-              ? {
-                  ...risk,
-                  ...values,
-                  impact: Number(values.impact),
-                  probability: Number(values.probability),
-                }
-              : risk
-          )
-        );
-        toast({
-          title: "Risk factor updated",
-          description: `${values.name} has been updated successfully.`,
-        });
-      } else {
-        // Add new risk factor
-        const newRiskFactor: RiskFactor = {
-          id: `RISK-${String(riskFactors.length + 1).padStart(3, "0")}`,
-          ...values,
-          impact: Number(values.impact),
-          probability: Number(values.probability),
-          createdAt: new Date().toISOString(),
-        };
-        setRiskFactors((prev) => [...prev, newRiskFactor]);
-        toast({
-          title: "Risk factor added",
-          description: `${values.name} has been added successfully.`,
-        });
-      }
-      
-      setIsLoading(false);
-      setIsFormOpen(false);
-      setCurrentRiskFactor(null);
-    }, 1000);
+  
+  const getSeverityColor = (severity: string) => {
+    switch(severity.toLowerCase()) {
+      case 'low':
+        return 'bg-blue-500/10 text-blue-500 border-blue-200';
+      case 'medium':
+        return 'bg-amber-500/10 text-amber-500 border-amber-200';
+      case 'high':
+        return 'bg-orange-500/10 text-orange-500 border-orange-200';
+      case 'critical':
+        return 'bg-red-500/10 text-red-500 border-red-200';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-200';
+    }
   };
-
-  const handleConfirmDelete = () => {
-    if (!currentRiskFactor) return;
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setRiskFactors((prev) =>
-        prev.filter((risk) => risk.id !== currentRiskFactor.id)
-      );
-      
-      toast({
-        title: "Risk factor deleted",
-        description: `${currentRiskFactor.name} has been deleted successfully.`,
-        variant: "destructive",
-      });
-      
-      setIsLoading(false);
-      setIsDeleteDialogOpen(false);
-      setCurrentRiskFactor(null);
-    }, 1000);
+  
+  const getStatusColor = (status: string) => {
+    switch(status.toLowerCase()) {
+      case 'active':
+        return 'bg-red-500/10 text-red-500 border-red-200';
+      case 'mitigated':
+        return 'bg-green-500/10 text-green-500 border-green-200';
+      case 'monitoring':
+        return 'bg-blue-500/10 text-blue-500 border-blue-200';
+      case 'closed':
+        return 'bg-gray-500/10 text-gray-500 border-gray-200';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-200';
+    }
   };
-
-  const handleSearch = (query: string) => {
-    // Implement search functionality here
-    console.log("Searching for:", query);
+  
+  const getRiskScore = (impact: number, probability: number) => {
+    return impact * probability;
   };
-
-  // Calculate statistics
-  const activeRisks = riskFactors.filter(risk => risk.status === "active").length;
-  const highSeverityRisks = riskFactors.filter(risk => 
-    risk.severity === "high" || risk.severity === "critical"
-  ).length;
-  const averageRiskScore = Math.round(
-    riskFactors.reduce((acc, risk) => acc + (risk.impact * risk.probability) / 2, 0) / 
-    riskFactors.length
-  );
-
+  
+  const getRiskScoreColor = (score: number) => {
+    if (score <= 25) return 'text-blue-500';
+    if (score <= 50) return 'text-amber-500';
+    if (score <= 75) return 'text-orange-500';
+    return 'text-red-500';
+  };
+  
   return (
     <div className="container pb-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Risk Analysis</h1>
           <p className="text-muted-foreground mt-1">
-            Monitor and manage supply chain risks
+            Analyze and manage risk factors across your supply chain
           </p>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2">
+            <Filter size={16} />
+            Filter
+          </Button>
+          <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus size={16} />
+            Add Risk Factor
+          </Button>
+        </div>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Risk Factors</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">{riskFactors.length}</div>
-              <Shield className="h-6 w-6 text-muted-foreground" />
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold">{riskFactors.length}</p>
+              <BarChart2 className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Identified risk factors
-            </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Active Risks</CardTitle>
+            <CardTitle className="text-lg">Critical Risks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold text-red-500">{activeRisks}</div>
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold text-red-500">
+                {riskFactors.filter(f => f.severity.toLowerCase() === 'critical').length}
+              </p>
               <AlertCircle className="h-6 w-6 text-red-500" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Currently active risks
-            </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">High Severity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold text-orange-500">{highSeverityRisks}</div>
-              <AlertTriangle className="h-6 w-6 text-orange-500" />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              High and critical severity risks
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Average Risk Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">{averageRiskScore}</div>
-              <Gauge className="h-6 w-6 text-muted-foreground" />
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold text-amber-500">
+                {riskFactors.length > 0 
+                  ? Math.round(riskFactors.reduce((acc, factor) => 
+                      acc + getRiskScore(factor.impact, factor.probability), 0) / riskFactors.length)
+                  : 0}
+              </p>
+              <MessageSquareWarning className="h-6 w-6 text-amber-500" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Average risk score (1-50)
-            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover-scale">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Mitigated Risks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold text-green-500">
+                {riskFactors.filter(f => f.status.toLowerCase() === 'mitigated').length}
+              </p>
+              <SlidersHorizontal className="h-6 w-6 text-green-500" />
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <CrudTable
-            title="Risk Factor Management"
-            data={riskFactors}
-            columns={columns}
-            onAdd={handleAddRiskFactor}
-            onEdit={handleEditRiskFactor}
-            onDelete={handleDeleteRiskFactor}
-            onSearch={handleSearch}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Form */}
-      <CrudForm
-        fields={riskFormFields}
-        title={currentRiskFactor ? "Edit Risk Factor" : "Add Risk Factor"}
-        description={
-          currentRiskFactor
-            ? "Update the risk factor information below."
-            : "Enter the new risk factor details below."
-        }
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmit}
-        defaultValues={currentRiskFactor || undefined}
-        isLoading={isLoading}
+      
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Risks</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="mitigated">Mitigated</TabsTrigger>
+          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+        </TabsList>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <CardTitle>Risk Factors</CardTitle>
+              
+              <div className="flex w-full md:w-auto flex-col sm:flex-row gap-3">
+                <div className="relative flex-grow">
+                  <Input
+                    type="search"
+                    placeholder="Search risk factors..."
+                    className="w-full md:w-[250px]"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : isError ? (
+              <div className="flex justify-center items-center h-40">
+                <p className="text-red-500">Error loading risk factors</p>
+              </div>
+            ) : filteredRiskFactors.length === 0 ? (
+              <div className="text-center py-10">
+                <h3 className="text-lg font-semibold">No risk factors found</h3>
+                <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or add a new risk factor</p>
+                <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Risk Factor
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Severity</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Risk Score</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRiskFactors.map((riskFactor) => {
+                    const riskScore = getRiskScore(riskFactor.impact, riskFactor.probability);
+                    const riskScoreClass = getRiskScoreColor(riskScore);
+                    
+                    return (
+                      <TableRow key={riskFactor.id}>
+                        <TableCell className="font-medium">{riskFactor.name}</TableCell>
+                        <TableCell>{riskFactor.category}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={getSeverityColor(riskFactor.severity)}
+                          >
+                            {riskFactor.severity}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={getStatusColor(riskFactor.status)}
+                          >
+                            {riskFactor.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className={`font-semibold ${riskScoreClass}`}>{riskScore}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({riskFactor.impact} × {riskFactor.probability})
+                            </span>
+                          </div>
+                          <div className="flex items-center text-xs mt-1">
+                            <span className="text-amber-500 flex items-center gap-0.5">
+                              <ArrowUp className="h-3 w-3" /> {riskFactor.impact}
+                            </span>
+                            <span className="mx-1">|</span>
+                            <span className="text-blue-500 flex items-center gap-0.5">
+                              <ArrowDown className="h-3 w-3" /> {riskFactor.probability}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(riskFactor)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => openDeleteDialog(riskFactor)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredRiskFactors.length} of {riskFactors.length} risk factors
+            </p>
+          </CardFooter>
+        </Card>
+      </Tabs>
+      
+      {/* Create Risk Factor Dialog */}
+      <RiskFactorDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateRiskFactor}
+        title="Add Risk Factor"
+        description="Add a new risk factor to the system."
+        isLoading={createRiskFactorMutation.isPending}
       />
-
-      {/* Delete Confirmation */}
-      <DeleteConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
+      
+      {/* Edit Risk Factor Dialog */}
+      <RiskFactorDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSubmit={handleUpdateRiskFactor}
+        initialData={selectedRiskFactor || undefined}
+        title="Edit Risk Factor"
+        description="Update the risk factor details."
+        isLoading={updateRiskFactorMutation.isPending}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeleteRiskFactor}
         title="Delete Risk Factor"
-        description={
-          currentRiskFactor
-            ? `Are you sure you want to delete "${currentRiskFactor.name}"? This action cannot be undone.`
-            : "Are you sure you want to delete this risk factor? This action cannot be undone."
-        }
-        isLoading={isLoading}
+        description="Are you sure you want to delete this risk factor? This action cannot be undone."
+        isLoading={deleteRiskFactorMutation.isPending}
       />
     </div>
   );

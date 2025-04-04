@@ -1,448 +1,323 @@
-import { useState } from "react";
-import { z } from "zod";
-import { CrudTable } from "@/components/common/CrudTable";
-import { CrudForm, FormField } from "@/components/common/CrudForm";
-import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
-import { Check, X } from "lucide-react";
 
-// Supplier type
-interface Supplier {
-  id: string;
-  name: string;
-  category: string;
-  location: string;
-  status: string;
-  riskScore: number;
-  verified: boolean;
-  contactEmail: string;
-  contactPhone: string;
-}
+import { useState } from "react";
+import { 
+  Users, 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash, 
+  Filter,
+  ShieldCheck, 
+  ShieldAlert,
+  Factory,
+  Globe
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useSuppliers } from "@/hooks/useSuppliers";
+import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import type { Supplier } from "@/types/api";
 
 const Suppliers = () => {
-  // State for the suppliers
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    {
-      id: "SUP-001",
-      name: "EcoGreen Materials",
-      category: "Raw Materials",
-      location: "Chicago, USA",
-      status: "active",
-      riskScore: 92,
-      verified: true,
-      contactEmail: "contact@ecogreen.com",
-      contactPhone: "+1 555-123-4567"
-    },
-    {
-      id: "SUP-002",
-      name: "Alps Electronics",
-      category: "Components",
-      location: "Tokyo, Japan",
-      status: "active",
-      riskScore: 87,
-      verified: true,
-      contactEmail: "info@alpselectronics.jp",
-      contactPhone: "+81 3-1234-5678"
-    },
-    {
-      id: "SUP-003",
-      name: "Southland Manufacturing",
-      category: "Assembly",
-      location: "Atlanta, USA",
-      status: "active",
-      riskScore: 76,
-      verified: true,
-      contactEmail: "operations@southland.com",
-      contactPhone: "+1 555-987-6543"
-    },
-    {
-      id: "SUP-004",
-      name: "Eastern Textiles Ltd.",
-      category: "Textiles",
-      location: "Dhaka, Bangladesh",
-      status: "review",
-      riskScore: 68,
-      verified: false,
-      contactEmail: "info@easterntextiles.com",
-      contactPhone: "+880 2-9876543"
-    },
-    {
-      id: "SUP-005",
-      name: "Global Freight Partners",
-      category: "Logistics",
-      location: "Rotterdam, Netherlands",
-      status: "active",
-      riskScore: 62,
-      verified: false,
-      contactEmail: "support@gfp.com",
-      contactPhone: "+31 10-987-6543"
-    }
-  ]);
-
-  // State for CRUD operations
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { 
+    suppliersQuery, 
+    createSupplierMutation, 
+    updateSupplierMutation, 
+    deleteSupplierMutation 
+  } = useSuppliers();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Form fields
-  const supplierFormFields: FormField[] = [
-    {
-      name: "name",
-      label: "Supplier Name",
-      type: "text",
-      placeholder: "Enter supplier name",
-      validation: z.string().min(2, "Name must be at least 2 characters"),
-    },
-    {
-      name: "category",
-      label: "Category",
-      type: "select",
-      placeholder: "Select category",
-      options: [
-        { label: "Raw Materials", value: "Raw Materials" },
-        { label: "Components", value: "Components" },
-        { label: "Assembly", value: "Assembly" },
-        { label: "Textiles", value: "Textiles" },
-        { label: "Logistics", value: "Logistics" },
-        { label: "Services", value: "Services" },
-      ],
-      validation: z.string().min(1, "Category is required"),
-    },
-    {
-      name: "location",
-      label: "Location",
-      type: "text",
-      placeholder: "City, Country",
-      validation: z.string().min(2, "Location is required"),
-    },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      placeholder: "Select status",
-      options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
-        { label: "Under Review", value: "review" },
-        { label: "Suspended", value: "suspended" },
-      ],
-      validation: z.string().min(1, "Status is required"),
-    },
-    {
-      name: "riskScore",
-      label: "Risk Score (0-100)",
-      type: "number",
-      placeholder: "Enter risk score",
-      validation: z.number().min(0).max(100),
-    },
-    {
-      name: "verified",
-      label: "Verified",
-      type: "select",
-      placeholder: "Select verification status",
-      options: [
-        { label: "Verified", value: "true" },
-        { label: "Not Verified", value: "false" },
-      ],
-      validation: z.string(),
-    },
-    {
-      name: "contactEmail",
-      label: "Contact Email",
-      type: "email",
-      placeholder: "Enter contact email",
-      validation: z.string().email("Invalid email address"),
-    },
-    {
-      name: "contactPhone",
-      label: "Contact Phone",
-      type: "text",
-      placeholder: "Enter contact phone",
-      validation: z.string().min(5, "Phone number is required"),
-    },
-  ];
-
-  // Table columns
-  const columns = [
-    {
-      header: "ID",
-      accessorKey: "id",
-    },
-    {
-      header: "Name",
-      accessorKey: "name",
-    },
-    {
-      header: "Category",
-      accessorKey: "category",
-    },
-    {
-      header: "Location",
-      accessorKey: "location",
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: (supplier: Supplier) => (
-        <Badge variant={getStatusVariant(supplier.status)}>
-          {supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "Risk Score",
-      accessorKey: "riskScore",
-      cell: (supplier: Supplier) => (
-        <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${getRiskColor(supplier.riskScore)}`}></span>
-          <span>{supplier.riskScore}</span>
-        </div>
-      ),
-    },
-    {
-      header: "Verified",
-      accessorKey: "verified",
-      cell: (supplier: Supplier) => (
-        supplier.verified ? 
-          <Badge variant="outline" className="text-green-500 gap-1">
-            <Check className="h-3 w-3" /> Verified
-          </Badge> : 
-          <Badge variant="outline" className="text-amber-500 gap-1">
-            <X className="h-3 w-3" /> Not Verified
-          </Badge>
-      ),
-    },
-  ];
-
-  // Helper functions
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "secondary";
-      case "inactive":
-        return "secondary";
-      case "review":
-        return "outline";
-      case "suspended":
-        return "destructive";
-      default:
-        return "default";
+  const [activeTab, setActiveTab] = useState("all");
+  
+  const { data: suppliers = [], isLoading, isError } = suppliersQuery;
+  
+  const filteredSuppliers = suppliers
+    .filter((supplier) => 
+      (activeTab === "all" || supplier.status.toLowerCase() === activeTab) &&
+      (supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       supplier.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       supplier.location.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  
+  const handleCreateSupplier = (data: any) => {
+    createSupplierMutation.mutate(data);
+  };
+  
+  const handleUpdateSupplier = (data: any) => {
+    if (selectedSupplier) {
+      updateSupplierMutation.mutate({
+        id: selectedSupplier.id,
+        supplier: data
+      });
     }
   };
-
-  const getRiskColor = (score: number) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-amber-500";
-    if (score >= 40) return "bg-orange-500";
-    return "bg-red-500";
+  
+  const handleDeleteSupplier = () => {
+    if (selectedSupplier) {
+      deleteSupplierMutation.mutate(selectedSupplier.id);
+      setIsDeleteDialogOpen(false);
+    }
   };
-
-  // CRUD operations
-  const handleAddSupplier = () => {
-    setCurrentSupplier(null);
-    setIsFormOpen(true);
+  
+  const openEditDialog = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setIsEditDialogOpen(true);
   };
-
-  const handleEditSupplier = (supplier: Supplier) => {
-    setCurrentSupplier(supplier);
-    setIsFormOpen(true);
-  };
-
-  const handleDeleteSupplier = (supplier: Supplier) => {
-    setCurrentSupplier(supplier);
+  
+  const openDeleteDialog = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
     setIsDeleteDialogOpen(true);
   };
-
-  const handleSubmit = (values: any) => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (currentSupplier) {
-        // Edit existing supplier
-        setSuppliers((prev) =>
-          prev.map((supplier) =>
-            supplier.id === currentSupplier.id
-              ? {
-                  ...supplier,
-                  ...values,
-                  verified: values.verified === "true",
-                  riskScore: Number(values.riskScore),
-                }
-              : supplier
-          )
-        );
-        toast({
-          title: "Supplier updated",
-          description: `${values.name} has been updated successfully.`,
-        });
-      } else {
-        // Add new supplier
-        const newSupplier: Supplier = {
-          id: `SUP-${String(suppliers.length + 1).padStart(3, "0")}`,
-          ...values,
-          verified: values.verified === "true",
-          riskScore: Number(values.riskScore),
-        };
-        setSuppliers((prev) => [...prev, newSupplier]);
-        toast({
-          title: "Supplier added",
-          description: `${values.name} has been added successfully.`,
-        });
-      }
-      
-      setIsLoading(false);
-      setIsFormOpen(false);
-      setCurrentSupplier(null);
-    }, 1000);
+  
+  const getRiskColor = (score: number) => {
+    if (score < 30) return 'text-green-500';
+    if (score < 60) return 'text-amber-500';
+    if (score < 80) return 'text-orange-500';
+    return 'text-red-500';
   };
-
-  const handleConfirmDelete = () => {
-    if (!currentSupplier) return;
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setSuppliers((prev) =>
-        prev.filter((supplier) => supplier.id !== currentSupplier.id)
-      );
-      
-      toast({
-        title: "Supplier deleted",
-        description: `${currentSupplier.name} has been deleted successfully.`,
-        variant: "destructive",
-      });
-      
-      setIsLoading(false);
-      setIsDeleteDialogOpen(false);
-      setCurrentSupplier(null);
-    }, 1000);
+  
+  const getStatusBadge = (status: string) => {
+    switch(status.toLowerCase()) {
+      case 'active':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+      case 'inactive':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Pending</Badge>;
+      case 'suspended':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Suspended</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
-
-  const handleSearch = (query: string) => {
-    // Implement search functionality here
-    console.log("Searching for:", query);
-  };
-
+  
   return (
     <div className="container pb-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your supply chain partners
+            Manage and monitor your supply chain partners
           </p>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2">
+            <Filter size={16} />
+            Filter
+          </Button>
+          <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus size={16} />
+            Add Supplier
+          </Button>
+        </div>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{suppliers.length}</div>
-            <p className="text-sm text-muted-foreground">
-              Active suppliers in your network
-            </p>
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold">{suppliers.length}</p>
+              <Users className="h-6 w-6 text-muted-foreground" />
+            </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Verified</CardTitle>
+            <CardTitle className="text-lg">Verified Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-500">
-              {suppliers.filter((s) => s.verified).length}
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold text-green-500">
+                {suppliers.filter(s => s.verified).length}
+              </p>
+              <ShieldCheck className="h-6 w-6 text-green-500" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Blockchain verified suppliers
-            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Under Review</CardTitle>
+            <CardTitle className="text-lg">High Risk Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-500">
-              {suppliers.filter((s) => s.status === "review").length}
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold text-red-500">
+                {suppliers.filter(s => s.risk_score >= 75).length}
+              </p>
+              <ShieldAlert className="h-6 w-6 text-red-500" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Suppliers currently under review
-            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Average Risk Score</CardTitle>
+            <CardTitle className="text-lg">Categories</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {Math.round(
-                suppliers.reduce((acc, s) => acc + s.riskScore, 0) / suppliers.length
-              )}
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-bold">
+                {new Set(suppliers.map(s => s.category)).size}
+              </p>
+              <Factory className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Average risk across all suppliers
-            </p>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <CrudTable
-            title="Supplier Management"
-            data={suppliers}
-            columns={columns}
-            onAdd={handleAddSupplier}
-            onEdit={handleEditSupplier}
-            onDelete={handleDeleteSupplier}
-            onSearch={handleSearch}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Form */}
-      <CrudForm
-        fields={supplierFormFields}
-        title={currentSupplier ? "Edit Supplier" : "Add Supplier"}
-        description={
-          currentSupplier
-            ? "Update the supplier information below."
-            : "Enter the new supplier details below."
-        }
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmit}
-        defaultValues={
-          currentSupplier
-            ? { ...currentSupplier, verified: String(currentSupplier.verified) }
-            : undefined
-        }
-        isLoading={isLoading}
+      
+      <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Suppliers</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive</TabsTrigger>
+        </TabsList>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <CardTitle>Supplier Directory</CardTitle>
+              
+              <div className="flex w-full md:w-auto flex-col sm:flex-row gap-3">
+                <div className="relative flex-grow">
+                  <Input
+                    type="search"
+                    placeholder="Search suppliers..."
+                    className="w-full md:w-[250px]"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : isError ? (
+              <div className="flex justify-center items-center h-40">
+                <p className="text-red-500">Error loading suppliers</p>
+              </div>
+            ) : filteredSuppliers.length === 0 ? (
+              <div className="text-center py-10">
+                <h3 className="text-lg font-semibold">No suppliers found</h3>
+                <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or add a new supplier</p>
+                <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Supplier
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Risk Score</TableHead>
+                      <TableHead>Verified</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((supplier) => (
+                      <TableRow key={supplier.id}>
+                        <TableCell className="font-medium">{supplier.name}</TableCell>
+                        <TableCell>{supplier.category}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Globe className="h-4 w-4" />
+                            <span>{supplier.location}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(supplier.status)}</TableCell>
+                        <TableCell>
+                          <span className={`font-semibold ${getRiskColor(supplier.risk_score)}`}>
+                            {supplier.risk_score}/100
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {supplier.verified ? (
+                            <ShieldCheck className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <ShieldAlert className="h-5 w-5 text-amber-500" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(supplier)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => openDeleteDialog(supplier)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </Tabs>
+      
+      {/* Create Supplier Dialog */}
+      <SupplierDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateSupplier}
+        title="Add Supplier"
+        description="Add a new supplier to your supply chain."
+        isLoading={createSupplierMutation.isPending}
       />
-
-      {/* Delete Confirmation */}
-      <DeleteConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
+      
+      {/* Edit Supplier Dialog */}
+      <SupplierDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSubmit={handleUpdateSupplier}
+        initialData={selectedSupplier || undefined}
+        title="Edit Supplier"
+        description="Update supplier details."
+        isLoading={updateSupplierMutation.isPending}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeleteSupplier}
         title="Delete Supplier"
-        description={
-          currentSupplier
-            ? `Are you sure you want to delete ${currentSupplier.name}? This action cannot be undone.`
-            : "Are you sure you want to delete this supplier? This action cannot be undone."
-        }
-        isLoading={isLoading}
+        description="Are you sure you want to delete this supplier? This action cannot be undone."
+        isLoading={deleteSupplierMutation.isPending}
       />
     </div>
   );

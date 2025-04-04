@@ -1108,6 +1108,42 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referral_url: string
+          referred_user_id: string | null
+          reward_claimed: boolean
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referral_url: string
+          referred_user_id?: string | null
+          reward_claimed?: boolean
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referral_url?: string
+          referred_user_id?: string | null
+          reward_claimed?: boolean
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       risk_assessments: {
         Row: {
           category: string
@@ -1689,6 +1725,86 @@ export type Database = {
         }
         Relationships: []
       }
+      trending_content: {
+        Row: {
+          author_id: string | null
+          category: string
+          comments: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          likes: number
+          published_at: string
+          title: string
+          trending: boolean
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          author_id?: string | null
+          category: string
+          comments?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          likes?: number
+          published_at?: string
+          title: string
+          trending?: boolean
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          comments?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          likes?: number
+          published_at?: string
+          title?: string
+          trending?: boolean
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      user_content_interactions: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          interaction_type: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          interaction_type: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_content_interactions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "trending_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -1713,6 +1829,36 @@ export type Database = {
           organization?: string | null
           role?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_rewards: {
+        Row: {
+          description: string
+          earned_at: string
+          id: string
+          is_redeemed: boolean
+          redeemed_at: string | null
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          description: string
+          earned_at?: string
+          id?: string
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          description?: string
+          earned_at?: string
+          id?: string
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          reward_type?: string
+          user_id?: string
         }
         Relationships: []
       }

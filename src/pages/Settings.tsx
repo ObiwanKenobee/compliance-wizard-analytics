@@ -1,911 +1,551 @@
+
 import { useState } from "react";
-import { z } from "zod";
-import { CrudTable } from "@/components/common/CrudTable";
-import { CrudForm, FormField } from "@/components/common/CrudForm";
-import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
 import { 
-  Settings as SettingsIcon, 
+  SettingsIcon, 
   User, 
-  Shield, 
   Bell, 
-  Users, 
-  Key, 
-  Lock, 
-  Mail,
-  UserPlus,
-  Ban
+  Globe, 
+  Palette, 
+  Shield, 
+  Save, 
+  ChevronDown,
+  Check,
+  AtSign,
+  Building,
+  Calendar
 } from "lucide-react";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive" | "pending";
-  createdAt: string;
-  lastActive?: string;
-}
-
-interface Integration {
-  id: string;
-  name: string;
-  type: string;
-  status: "connected" | "disconnected" | "pending";
-  apiKey?: string;
-  lastSync?: string;
-}
-
-interface NotificationSetting {
-  id: string;
-  name: string;
-  description: string;
-  type: "email" | "in-app" | "sms";
-  enabled: boolean;
-}
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { toast } from "@/hooks/use-toast";
 
 const Settings = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: "USR-001",
-      name: "John Doe",
-      email: "john.doe@example.com",
-      role: "Admin",
-      status: "active",
-      createdAt: "2023-01-15T00:00:00Z",
-      lastActive: "2023-10-20T09:30:00Z"
-    },
-    {
-      id: "USR-002",
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "Manager",
-      status: "active",
-      createdAt: "2023-02-20T00:00:00Z",
-      lastActive: "2023-10-19T14:15:00Z"
-    },
-    {
-      id: "USR-003",
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-      role: "Analyst",
-      status: "active",
-      createdAt: "2023-03-10T00:00:00Z",
-      lastActive: "2023-10-18T11:20:00Z"
-    },
-    {
-      id: "USR-004",
-      name: "Sarah Williams",
-      email: "sarah.williams@example.com",
-      role: "Analyst",
-      status: "inactive",
-      createdAt: "2023-04-05T00:00:00Z",
-      lastActive: "2023-09-30T16:45:00Z"
-    },
-    {
-      id: "USR-005",
-      name: "Michael Brown",
-      email: "michael.brown@example.com",
-      role: "Viewer",
-      status: "pending",
-      createdAt: "2023-10-15T00:00:00Z"
-    }
-  ]);
-
-  const [integrations, setIntegrations] = useState<Integration[]>([
-    {
-      id: "INT-001",
-      name: "Salesforce",
-      type: "CRM",
-      status: "connected",
-      apiKey: "sf_api_********",
-      lastSync: "2023-10-18T11:20:00Z"
-    },
-    {
-      id: "INT-002",
-      name: "SAP",
-      type: "ERP",
-      status: "connected",
-      apiKey: "sap_api_********",
-      lastSync: "2023-10-19T14:15:00Z"
-    },
-    {
-      id: "INT-003",
-      name: "Microsoft Power BI",
-      type: "Analytics",
-      status: "disconnected",
-      apiKey: "pb_api_********",
-      lastSync: "2023-09-30T16:45:00Z"
-    },
-    {
-      id: "INT-004",
-      name: "Stripe",
-      type: "Payment",
-      status: "pending",
-      apiKey: "stripe_api_********"
-    }
-  ]);
-
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSetting[]>([
-    {
-      id: "NOTIF-001",
-      name: "Risk Alerts",
-      description: "Receive notifications for new risk alerts",
-      type: "email",
-      enabled: true
-    },
-    {
-      id: "NOTIF-002",
-      name: "Supplier Updates",
-      description: "Get notified when supplier information changes",
-      type: "in-app",
-      enabled: true
-    },
-    {
-      id: "NOTIF-003",
-      name: "Compliance Issues",
-      description: "Critical compliance violations alerts",
-      type: "email",
-      enabled: true
-    },
-    {
-      id: "NOTIF-004",
-      name: "Report Generation",
-      description: "Notification when new reports are generated",
-      type: "in-app",
-      enabled: false
-    },
-    {
-      id: "NOTIF-005",
-      name: "Security Alerts",
-      description: "Critical security alerts for your account",
-      type: "sms",
-      enabled: true
-    }
-  ]);
-
-  const [activeTab, setActiveTab] = useState("teamMembers");
-
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentItem, setCurrentItem] = useState<any>(null);
+  // Sample user ID for demonstration
+  const userId = "placeholder-user-id";
+  
+  // Form states for different settings
+  const [userProfile, setUserProfile] = useState({
+    fullName: "Admin User",
+    email: "admin@guardian.io",
+    role: "Administrator",
+    organization: "Guardian Inc.",
+  });
+  
+  const [preferences, setPreferences] = useState({
+    notificationsEnabled: true,
+    language: "english",
+    region: "us",
+    theme: "system",
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
-
-  const teamMemberFields: FormField[] = [
-    {
-      name: "name",
-      label: "Name",
-      type: "text",
-      placeholder: "Enter name",
-      validation: z.string().min(2, "Name must be at least 2 characters"),
-    },
-    {
-      name: "email",
-      label: "Email",
-      type: "email",
-      placeholder: "Enter email address",
-      validation: z.string().email("Invalid email address"),
-    },
-    {
-      name: "role",
-      label: "Role",
-      type: "select",
-      placeholder: "Select role",
-      options: [
-        { label: "Admin", value: "Admin" },
-        { label: "Manager", value: "Manager" },
-        { label: "Analyst", value: "Analyst" },
-        { label: "Viewer", value: "Viewer" },
-      ],
-      validation: z.string().min(1, "Role is required"),
-    },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      placeholder: "Select status",
-      options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
-        { label: "Pending", value: "pending" },
-      ],
-      validation: z.string().min(1, "Status is required"),
-    }
-  ];
-
-  const integrationFields: FormField[] = [
-    {
-      name: "name",
-      label: "Name",
-      type: "text",
-      placeholder: "Enter integration name",
-      validation: z.string().min(2, "Name must be at least 2 characters"),
-    },
-    {
-      name: "type",
-      label: "Type",
-      type: "select",
-      placeholder: "Select type",
-      options: [
-        { label: "CRM", value: "CRM" },
-        { label: "ERP", value: "ERP" },
-        { label: "Analytics", value: "Analytics" },
-        { label: "Payment", value: "Payment" },
-        { label: "Other", value: "Other" },
-      ],
-      validation: z.string().min(1, "Type is required"),
-    },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      placeholder: "Select status",
-      options: [
-        { label: "Connected", value: "connected" },
-        { label: "Disconnected", value: "disconnected" },
-        { label: "Pending", value: "pending" },
-      ],
-      validation: z.string().min(1, "Status is required"),
-    },
-    {
-      name: "apiKey",
-      label: "API Key",
-      type: "text",
-      placeholder: "Enter API key",
-      validation: z.string().optional(),
-    }
-  ];
-
-  const notificationFields: FormField[] = [
-    {
-      name: "name",
-      label: "Name",
-      type: "text",
-      placeholder: "Enter notification name",
-      validation: z.string().min(2, "Name must be at least 2 characters"),
-    },
-    {
-      name: "description",
-      label: "Description",
-      type: "textarea",
-      placeholder: "Enter description",
-      validation: z.string().min(10, "Description must be at least 10 characters"),
-    },
-    {
-      name: "type",
-      label: "Type",
-      type: "select",
-      placeholder: "Select notification type",
-      options: [
-        { label: "Email", value: "email" },
-        { label: "In-App", value: "in-app" },
-        { label: "SMS", value: "sms" },
-      ],
-      validation: z.string().min(1, "Type is required"),
-    },
-    {
-      name: "enabled",
-      label: "Enabled",
-      type: "select",
-      placeholder: "Select status",
-      options: [
-        { label: "Enabled", value: "true" },
-        { label: "Disabled", value: "false" },
-      ],
-      validation: z.string().min(1, "Status is required"),
-    }
-  ];
-
-  const teamMemberColumns = [
-    {
-      header: "Name",
-      accessorKey: "name",
-      cell: (user: TeamMember) => (
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="h-4 w-4 text-primary" />
-          </div>
-          <span>{user.name}</span>
-        </div>
-      ),
-    },
-    {
-      header: "Email",
-      accessorKey: "email",
-    },
-    {
-      header: "Role",
-      accessorKey: "role",
-      cell: (user: TeamMember) => (
-        <Badge variant="outline">{user.role}</Badge>
-      ),
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: (user: TeamMember) => (
-        <Badge variant={getStatusVariant(user.status)}>
-          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "Created",
-      accessorKey: "createdAt",
-      cell: (user: TeamMember) => {
-        const date = new Date(user.createdAt);
-        return date.toLocaleDateString();
-      },
-    },
-    {
-      header: "Last Active",
-      accessorKey: "lastActive",
-      cell: (user: TeamMember) => {
-        if (!user.lastActive) return "Never";
-        const date = new Date(user.lastActive);
-        return date.toLocaleDateString();
-      },
-    },
-  ];
-
-  const integrationColumns = [
-    {
-      header: "Name",
-      accessorKey: "name",
-    },
-    {
-      header: "Type",
-      accessorKey: "type",
-      cell: (integration: Integration) => (
-        <Badge variant="outline">{integration.type}</Badge>
-      ),
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: (integration: Integration) => (
-        <Badge variant={getIntegrationStatusVariant(integration.status)}>
-          {integration.status.charAt(0).toUpperCase() + integration.status.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "API Key",
-      accessorKey: "apiKey",
-      cell: (integration: Integration) => integration.apiKey || "N/A",
-    },
-    {
-      header: "Last Sync",
-      accessorKey: "lastSync",
-      cell: (integration: Integration) => {
-        if (!integration.lastSync) return "Never";
-        const date = new Date(integration.lastSync);
-        return date.toLocaleDateString();
-      },
-    },
-  ];
-
-  const notificationColumns = [
-    {
-      header: "Name",
-      accessorKey: "name",
-    },
-    {
-      header: "Description",
-      accessorKey: "description",
-    },
-    {
-      header: "Type",
-      accessorKey: "type",
-      cell: (notification: NotificationSetting) => (
-        <Badge variant="outline">
-          {notification.type === "email" ? <Mail className="h-3 w-3 mr-1" /> : null}
-          {notification.type === "in-app" ? <Bell className="h-3 w-3 mr-1" /> : null}
-          {notification.type === "sms" ? <Mail className="h-3 w-3 mr-1" /> : null}
-          {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      header: "Status",
-      accessorKey: "enabled",
-      cell: (notification: NotificationSetting) => (
-        <Badge variant={notification.enabled ? "secondary" : "secondary"}>
-          {notification.enabled ? "Enabled" : "Disabled"}
-        </Badge>
-      ),
-    },
-  ];
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "secondary";
-      case "inactive":
-        return "secondary";
-      case "pending":
-        return "outline";
-      default:
-        return "default";
-    }
-  };
-
-  const getIntegrationStatusVariant = (status: string) => {
-    switch (status) {
-      case "connected":
-        return "secondary";
-      case "disconnected":
-        return "secondary";
-      case "pending":
-        return "outline";
-      default:
-        return "default";
-    }
-  };
-
-  const handleAdd = () => {
-    setCurrentItem(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEdit = (item: any) => {
-    setCurrentItem(item);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (item: any) => {
-    setCurrentItem(item);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleSubmit = (values: any) => {
+  
+  // Handle profile update
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
-      if (activeTab === "teamMembers") {
-        handleTeamMemberSubmit(values);
-      } else if (activeTab === "integrations") {
-        handleIntegrationSubmit(values);
-      } else if (activeTab === "notifications") {
-        handleNotificationSubmit(values);
-      }
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "There was an error updating your profile.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      setIsFormOpen(false);
-      setCurrentItem(null);
-    }, 1000);
-  };
-
-  const handleTeamMemberSubmit = (values: any) => {
-    if (currentItem) {
-      setTeamMembers((prev) =>
-        prev.map((member) =>
-          member.id === currentItem.id
-            ? { ...member, ...values }
-            : member
-        )
-      );
-      toast({
-        title: "Team member updated",
-        description: `${values.name} has been updated successfully.`,
-      });
-    } else {
-      const newMember: TeamMember = {
-        id: `USR-${String(teamMembers.length + 1).padStart(3, "0")}`,
-        ...values,
-        createdAt: new Date().toISOString(),
-      };
-      setTeamMembers((prev) => [...prev, newMember]);
-      toast({
-        title: "Team member added",
-        description: `${values.name} has been added successfully.`,
-      });
     }
   };
-
-  const handleIntegrationSubmit = (values: any) => {
-    if (currentItem) {
-      setIntegrations((prev) =>
-        prev.map((integration) =>
-          integration.id === currentItem.id
-            ? { ...integration, ...values }
-            : integration
-        )
-      );
-      toast({
-        title: "Integration updated",
-        description: `${values.name} has been updated successfully.`,
-      });
-    } else {
-      const newIntegration: Integration = {
-        id: `INT-${String(integrations.length + 1).padStart(3, "0")}`,
-        ...values,
-      };
-      setIntegrations((prev) => [...prev, newIntegration]);
-      toast({
-        title: "Integration added",
-        description: `${values.name} has been added successfully.`,
-      });
-    }
-  };
-
-  const handleNotificationSubmit = (values: any) => {
-    if (currentItem) {
-      setNotificationSettings((prev) =>
-        prev.map((notification) =>
-          notification.id === currentItem.id
-            ? { ...notification, ...values, enabled: values.enabled === "true" }
-            : notification
-        )
-      );
-      toast({
-        title: "Notification setting updated",
-        description: `${values.name} has been updated successfully.`,
-      });
-    } else {
-      const newNotification: NotificationSetting = {
-        id: `NOTIF-${String(notificationSettings.length + 1).padStart(3, "0")}`,
-        ...values,
-        enabled: values.enabled === "true",
-      };
-      setNotificationSettings((prev) => [...prev, newNotification]);
-      toast({
-        title: "Notification setting added",
-        description: `${values.name} has been added successfully.`,
-      });
-    }
-  };
-
-  const handleConfirmDelete = () => {
-    if (!currentItem) return;
-    
+  
+  // Handle preferences update
+  const handlePreferencesUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
-      if (activeTab === "teamMembers") {
-        setTeamMembers((prev) =>
-          prev.filter((member) => member.id !== currentItem.id)
-        );
-        toast({
-          title: "Team member deleted",
-          description: `${currentItem.name} has been deleted successfully.`,
-          variant: "destructive",
-        });
-      } else if (activeTab === "integrations") {
-        setIntegrations((prev) =>
-          prev.filter((integration) => integration.id !== currentItem.id)
-        );
-        toast({
-          title: "Integration deleted",
-          description: `${currentItem.name} has been deleted successfully.`,
-          variant: "destructive",
-        });
-      } else if (activeTab === "notifications") {
-        setNotificationSettings((prev) =>
-          prev.filter((notification) => notification.id !== currentItem.id)
-        );
-        toast({
-          title: "Notification setting deleted",
-          description: `${currentItem.name} has been deleted successfully.`,
-          variant: "destructive",
-        });
-      }
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
+      toast({
+        title: "Preferences Updated",
+        description: "Your preferences have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "There was an error updating your preferences.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      setIsDeleteDialogOpen(false);
-      setCurrentItem(null);
-    }, 1000);
-  };
-
-  const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
-  };
-
-  const getActiveTabData = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return teamMembers;
-      case "integrations":
-        return integrations;
-      case "notifications":
-        return notificationSettings;
-      default:
-        return [];
     }
   };
-
-  const getActiveTabColumns = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return teamMemberColumns;
-      case "integrations":
-        return integrationColumns;
-      case "notifications":
-        return notificationColumns;
-      default:
-        return [];
-    }
+  
+  // Toggle notification setting
+  const toggleNotifications = () => {
+    setPreferences(prev => ({
+      ...prev,
+      notificationsEnabled: !prev.notificationsEnabled
+    }));
   };
-
-  const getActiveTabTitle = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return "Team Members";
-      case "integrations":
-        return "Integrations";
-      case "notifications":
-        return "Notification Settings";
-      default:
-        return "";
-    }
-  };
-
-  const getActiveTabFormFields = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return teamMemberFields;
-      case "integrations":
-        return integrationFields;
-      case "notifications":
-        return notificationFields;
-      default:
-        return [];
-    }
-  };
-
-  const getFormTitle = () => {
-    const base = currentItem ? "Edit" : "Add";
-    switch (activeTab) {
-      case "teamMembers":
-        return `${base} Team Member`;
-      case "integrations":
-        return `${base} Integration`;
-      case "notifications":
-        return `${base} Notification Setting`;
-      default:
-        return "";
-    }
-  };
-
-  const getDeleteTitle = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return "Delete Team Member";
-      case "integrations":
-        return "Delete Integration";
-      case "notifications":
-        return "Delete Notification Setting";
-      default:
-        return "Delete Item";
-    }
-  };
-
-  const getTabIcon = (tab: string) => {
-    switch (tab) {
-      case "teamMembers":
-        return <Users className="h-4 w-4 mr-2" />;
-      case "integrations":
-        return <Shield className="h-4 w-4 mr-2" />;
-      case "notifications":
-        return <Bell className="h-4 w-4 mr-2" />;
-      case "security":
-        return <Key className="h-4 w-4 mr-2" />;
-      default:
-        return null;
-    }
-  };
-
-  const getActionIcon = () => {
-    switch (activeTab) {
-      case "teamMembers":
-        return currentItem ? <User className="h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />;
-      case "integrations":
-        return <Shield className="h-4 w-4 mr-2" />;
-      case "notifications":
-        return <Bell className="h-4 w-4 mr-2" />;
-      default:
-        return null;
-    }
-  };
-
+  
   return (
     <div className="container pb-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your account and application settings
-          </p>
-        </div>
+      <div className="flex flex-col gap-4 mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your account settings and preferences
+        </p>
       </div>
-
-      <Tabs defaultValue="teamMembers" value={activeTab} onValueChange={setActiveTab}>
+      
+      <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="teamMembers">
-            {getTabIcon("teamMembers")} Team Members
+          <TabsTrigger value="profile">
+            <User className="mr-2 h-4 w-4" />
+            Profile
           </TabsTrigger>
-          <TabsTrigger value="integrations">
-            {getTabIcon("integrations")} Integrations
+          <TabsTrigger value="preferences">
+            <SettingsIcon className="mr-2 h-4 w-4" />
+            Preferences
           </TabsTrigger>
           <TabsTrigger value="notifications">
-            {getTabIcon("notifications")} Notifications
+            <Bell className="mr-2 h-4 w-4" />
+            Notifications
           </TabsTrigger>
           <TabsTrigger value="security">
-            {getTabIcon("security")} Security
+            <Shield className="mr-2 h-4 w-4" />
+            Security
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="teamMembers">
+        
+        <TabsContent value="profile" className="mt-0">
           <Card>
-            <CardContent className="pt-6">
-              <CrudTable
-                title="Team Members Management"
-                data={teamMembers}
-                columns={teamMemberColumns}
-                onAdd={handleAdd}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSearch={handleSearch}
-              />
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>
+                Update your personal information and organization details
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="fullName"
+                        placeholder="Your name"
+                        value={userProfile.fullName}
+                        onChange={(e) => setUserProfile({...userProfile, fullName: e.target.value})}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <AtSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="email"
+                        type="email"
+                        placeholder="your.email@example.com"
+                        value={userProfile.email}
+                        onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select 
+                      value={userProfile.role}
+                      onValueChange={(value) => setUserProfile({...userProfile, role: value})}
+                    >
+                      <SelectTrigger id="role">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Administrator">Administrator</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Analyst">Analyst</SelectItem>
+                        <SelectItem value="Auditor">Auditor</SelectItem>
+                        <SelectItem value="Viewer">Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="organization">Organization</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="organization"
+                        placeholder="Your organization"
+                        value={userProfile.organization}
+                        onChange={(e) => setUserProfile({...userProfile, organization: e.target.value})}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator className="my-6" />
+                
+                <Collapsible className="w-full">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" type="button" className="flex w-full justify-between">
+                      <span>Advanced Profile Settings</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="joinDate">Join Date</Label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            id="joinDate"
+                            type="date"
+                            placeholder="Join date"
+                            className="pl-10"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="employeeId">Employee ID</Label>
+                        <Input 
+                          id="employeeId"
+                          placeholder="Employee ID"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </form>
             </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button onClick={handleProfileUpdate} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
-
-        <TabsContent value="integrations">
+        
+        <TabsContent value="preferences" className="mt-0">
           <Card>
-            <CardContent className="pt-6">
-              <CrudTable
-                title="Integrations Management"
-                data={integrations}
-                columns={integrationColumns}
-                onAdd={handleAdd}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSearch={handleSearch}
-              />
+            <CardHeader>
+              <CardTitle>User Preferences</CardTitle>
+              <CardDescription>
+                Customize your experience with Guardian-IO
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePreferencesUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="language">Language</Label>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <Select 
+                        value={preferences.language}
+                        onValueChange={(value) => setPreferences({...preferences, language: value})}
+                      >
+                        <SelectTrigger id="language">
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="english">English</SelectItem>
+                          <SelectItem value="spanish">Spanish</SelectItem>
+                          <SelectItem value="french">French</SelectItem>
+                          <SelectItem value="german">German</SelectItem>
+                          <SelectItem value="chinese">Chinese</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region</Label>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <Select 
+                        value={preferences.region}
+                        onValueChange={(value) => setPreferences({...preferences, region: value})}
+                      >
+                        <SelectTrigger id="region">
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="us">United States</SelectItem>
+                          <SelectItem value="eu">Europe</SelectItem>
+                          <SelectItem value="uk">United Kingdom</SelectItem>
+                          <SelectItem value="asia">Asia Pacific</SelectItem>
+                          <SelectItem value="africa">Africa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="theme">Theme</Label>
+                    <div className="flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-muted-foreground" />
+                      <Select 
+                        value={preferences.theme}
+                        onValueChange={(value) => setPreferences({...preferences, theme: value})}
+                      >
+                        <SelectTrigger id="theme">
+                          <SelectValue placeholder="Select theme" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="system">System Default</SelectItem>
+                          <SelectItem value="light">Light</SelectItem>
+                          <SelectItem value="dark">Dark</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator className="my-6" />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="notificationsEnabled">Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive notifications about updates and alerts
+                    </p>
+                  </div>
+                  <Switch
+                    id="notificationsEnabled"
+                    checked={preferences.notificationsEnabled}
+                    onCheckedChange={toggleNotifications}
+                  />
+                </div>
+              </form>
             </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button onClick={handlePreferencesUpdate} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Preferences
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
-
-        <TabsContent value="notifications">
+        
+        <TabsContent value="notifications" className="mt-0">
           <Card>
-            <CardContent className="pt-6">
-              <CrudTable
-                title="Notification Settings"
-                data={notificationSettings}
-                columns={notificationColumns}
-                onAdd={handleAdd}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSearch={handleSearch}
-              />
+            <CardHeader>
+              <CardTitle>Notification Settings</CardTitle>
+              <CardDescription>
+                Configure when and how you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Risk Alerts</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive notifications for high priority risk alerts
+                    </p>
+                  </div>
+                  <Switch defaultChecked={true} />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Supplier Updates</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Get notified when supplier information changes
+                    </p>
+                  </div>
+                  <Switch defaultChecked={true} />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Compliance Deadlines</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive reminders about upcoming compliance deadlines
+                    </p>
+                  </div>
+                  <Switch defaultChecked={true} />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>System Status</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Get alerts about system outages and maintenance
+                    </p>
+                  </div>
+                  <Switch defaultChecked={false} />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Weekly Reports</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive weekly summary reports via email
+                    </p>
+                  </div>
+                  <Switch defaultChecked={true} />
+                </div>
+              </div>
             </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button>
+                <Save className="mr-2 h-4 w-4" />
+                Save Notification Settings
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
-
-        <TabsContent value="security">
+        
+        <TabsContent value="security" className="mt-0">
           <Card>
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
               <CardDescription>
-                Manage your account security settings
+                Manage your account security and authentication methods
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <Card className="flex-1">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Lock className="h-4 w-4 text-primary" />
-                      <CardTitle className="text-lg">Password Security</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Two-Factor Authentication</Label>
                     <p className="text-sm text-muted-foreground">
-                      Your password was last changed 45 days ago. It's recommended to update your password every 90 days.
+                      Add an extra layer of security to your account
                     </p>
-                    <Button className="w-full">Change Password</Button>
-                  </CardContent>
-                </Card>
-                
-                <Card className="flex-1">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Enhance your account security with two-factor authentication.
-                    </p>
-                    <Button className="w-full">Enable 2FA</Button>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <Card>
-                <CardHeader>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <Ban className="h-4 w-4 text-destructive" />
-                    <CardTitle className="text-lg">Sessions & Devices</CardTitle>
+                    <Badge className="bg-green-500">Enabled</Badge>
+                    <Button variant="outline" size="sm">Configure</Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Current Session</p>
-                        <p className="text-sm text-muted-foreground">Chrome on MacOS - Started 2 hours ago</p>
-                      </div>
-                      <Badge className="sm:self-center mt-2 sm:mt-0 w-fit">Active</Badge>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">iPhone 13</p>
-                        <p className="text-sm text-muted-foreground">iOS App - Last active 2 days ago</p>
-                      </div>
-                      <Button variant="outline" size="sm" className="sm:self-center mt-2 sm:mt-0 w-fit">
-                        Revoke
-                      </Button>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Office Workstation</p>
-                        <p className="text-sm text-muted-foreground">Firefox on Windows - Last active 1 week ago</p>
-                      </div>
-                      <Button variant="outline" size="sm" className="sm:self-center mt-2 sm:mt-0 w-fit">
-                        Revoke
-                      </Button>
-                    </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Change Password</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Update your account password
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                  <Button variant="outline" size="sm">Change</Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>API Access</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Manage API keys and access tokens
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">Manage Keys</Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Login History</Label>
+                    <p className="text-sm text-muted-foreground">
+                      View recent account login activity
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">View History</Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5">
+                    <Label>Device Management</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Manage devices that are logged into your account
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">Manage Devices</Button>
+                </div>
+              </div>
             </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" className="text-destructive">
+                Sign Out All Devices
+              </Button>
+              <Button>
+                <Save className="mr-2 h-4 w-4" />
+                Save Security Settings
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
-
-      <CrudForm
-        fields={getActiveTabFormFields()}
-        title={getFormTitle()}
-        description={
-          currentItem
-            ? `Update the ${activeTab} information below.`
-            : `Enter the new ${activeTab} details below.`
-        }
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmit}
-        defaultValues={
-          activeTab === "notifications" && currentItem
-            ? { ...currentItem, enabled: String(currentItem.enabled) }
-            : currentItem
-        }
-        isLoading={isLoading}
-      />
-
-      <DeleteConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title={getDeleteTitle()}
-        description={
-          currentItem
-            ? `Are you sure you want to delete "${currentItem.name}"? This action cannot be undone.`
-            : `Are you sure you want to delete this ${activeTab.slice(0, -1)}? This action cannot be undone.`
-        }
-        isLoading={isLoading}
-      />
     </div>
   );
 };
 
 export default Settings;
-
